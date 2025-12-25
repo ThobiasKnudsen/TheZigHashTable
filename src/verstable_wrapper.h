@@ -1,7 +1,7 @@
 // Header file for Verstable wrapper functions
 // Unified naming: vt_{keytype}_{valtype}_{operation}
 // Key types: u64, u16, str
-// Val types: void (set), val4, val64, val256
+// Val types: void (set), val4, val64, val56
 
 #ifndef VERSTABLE_WRAPPER_H
 #define VERSTABLE_WRAPPER_H
@@ -37,19 +37,19 @@ typedef struct {
 typedef vt_generic_map vt_u64_void_map;
 typedef vt_generic_map vt_u64_val4_map;
 typedef vt_generic_map vt_u64_val64_map;
-typedef vt_generic_map vt_u64_val256_map;
+typedef vt_generic_map vt_u64_val56_map;
 
 // u16 key maps
 typedef vt_generic_map vt_u16_void_map;
 typedef vt_generic_map vt_u16_val4_map;
 typedef vt_generic_map vt_u16_val64_map;
-typedef vt_generic_map vt_u16_val256_map;
+typedef vt_generic_map vt_u16_val56_map;
 
 // string key maps
 typedef vt_generic_map vt_str_void_map;
 typedef vt_generic_map vt_str_val4_map;
 typedef vt_generic_map vt_str_val64_map;
-typedef vt_generic_map vt_str_val256_map;
+typedef vt_generic_map vt_str_val56_map;
 
 // ============================================================================
 // u64 key - void value (set)
@@ -94,18 +94,18 @@ int vt_u64_val64_is_end(vt_generic_iter iter);
 vt_generic_iter vt_u64_val64_next(vt_generic_iter iter);
 
 // ============================================================================
-// u64 key - val256 value (256 bytes)
+// u64 key - val56 value (56 bytes)
 // ============================================================================
 
-void vt_u64_val256_init(vt_u64_val256_map *table);
-void vt_u64_val256_cleanup(vt_u64_val256_map *table);
-int vt_u64_val256_insert(vt_u64_val256_map *table, uint64_t key, const uint8_t *val);
-const uint8_t* vt_u64_val256_get(vt_u64_val256_map *table, uint64_t key);
-int vt_u64_val256_erase(vt_u64_val256_map *table, uint64_t key);
-size_t vt_u64_val256_size(vt_u64_val256_map *table);
-vt_generic_iter vt_u64_val256_first(vt_u64_val256_map *table);
-int vt_u64_val256_is_end(vt_generic_iter iter);
-vt_generic_iter vt_u64_val256_next(vt_generic_iter iter);
+void vt_u64_val56_init(vt_u64_val56_map *table);
+void vt_u64_val56_cleanup(vt_u64_val56_map *table);
+int vt_u64_val56_insert(vt_u64_val56_map *table, uint64_t key, const uint8_t *val);
+const uint8_t* vt_u64_val56_get(vt_u64_val56_map *table, uint64_t key);
+int vt_u64_val56_erase(vt_u64_val56_map *table, uint64_t key);
+size_t vt_u64_val56_size(vt_u64_val56_map *table);
+vt_generic_iter vt_u64_val56_first(vt_u64_val56_map *table);
+int vt_u64_val56_is_end(vt_generic_iter iter);
+vt_generic_iter vt_u64_val56_next(vt_generic_iter iter);
 
 // ============================================================================
 // u16 key - void value (set)
@@ -150,18 +150,18 @@ int vt_u16_val64_is_end(vt_generic_iter iter);
 vt_generic_iter vt_u16_val64_next(vt_generic_iter iter);
 
 // ============================================================================
-// u16 key - val256 value (256 bytes)
+// u16 key - val56 value (56 bytes)
 // ============================================================================
 
-void vt_u16_val256_init(vt_u16_val256_map *table);
-void vt_u16_val256_cleanup(vt_u16_val256_map *table);
-int vt_u16_val256_insert(vt_u16_val256_map *table, uint16_t key, const uint8_t *val);
-const uint8_t* vt_u16_val256_get(vt_u16_val256_map *table, uint16_t key);
-int vt_u16_val256_erase(vt_u16_val256_map *table, uint16_t key);
-size_t vt_u16_val256_size(vt_u16_val256_map *table);
-vt_generic_iter vt_u16_val256_first(vt_u16_val256_map *table);
-int vt_u16_val256_is_end(vt_generic_iter iter);
-vt_generic_iter vt_u16_val256_next(vt_generic_iter iter);
+void vt_u16_val56_init(vt_u16_val56_map *table);
+void vt_u16_val56_cleanup(vt_u16_val56_map *table);
+int vt_u16_val56_insert(vt_u16_val56_map *table, uint16_t key, const uint8_t *val);
+const uint8_t* vt_u16_val56_get(vt_u16_val56_map *table, uint16_t key);
+int vt_u16_val56_erase(vt_u16_val56_map *table, uint16_t key);
+size_t vt_u16_val56_size(vt_u16_val56_map *table);
+vt_generic_iter vt_u16_val56_first(vt_u16_val56_map *table);
+int vt_u16_val56_is_end(vt_generic_iter iter);
+vt_generic_iter vt_u16_val56_next(vt_generic_iter iter);
 
 // ============================================================================
 // string key - void value (set)
@@ -206,17 +206,17 @@ int vt_str_val64_is_end(vt_generic_iter iter);
 vt_generic_iter vt_str_val64_next(vt_generic_iter iter);
 
 // ============================================================================
-// string key - val256 value (256 bytes)
+// string key - val56 value (56 bytes)
 // ============================================================================
 
-void vt_str_val256_init(vt_str_val256_map *table);
-void vt_str_val256_cleanup(vt_str_val256_map *table);
-int vt_str_val256_insert(vt_str_val256_map *table, const char *key, size_t len, const uint8_t *val);
-const uint8_t* vt_str_val256_get(vt_str_val256_map *table, const char *key, size_t len);
-int vt_str_val256_erase(vt_str_val256_map *table, const char *key, size_t len);
-size_t vt_str_val256_size(vt_str_val256_map *table);
-vt_generic_iter vt_str_val256_first(vt_str_val256_map *table);
-int vt_str_val256_is_end(vt_generic_iter iter);
-vt_generic_iter vt_str_val256_next(vt_generic_iter iter);
+void vt_str_val56_init(vt_str_val56_map *table);
+void vt_str_val56_cleanup(vt_str_val56_map *table);
+int vt_str_val56_insert(vt_str_val56_map *table, const char *key, size_t len, const uint8_t *val);
+const uint8_t* vt_str_val56_get(vt_str_val56_map *table, const char *key, size_t len);
+int vt_str_val56_erase(vt_str_val56_map *table, const char *key, size_t len);
+size_t vt_str_val56_size(vt_str_val56_map *table);
+vt_generic_iter vt_str_val56_first(vt_str_val56_map *table);
+int vt_str_val56_is_end(vt_generic_iter iter);
+vt_generic_iter vt_str_val56_next(vt_generic_iter iter);
 
 #endif // VERSTABLE_WRAPPER_H

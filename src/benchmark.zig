@@ -47,12 +47,12 @@ const Value64 = extern struct {
     }
 };
 
-const Value256 = extern struct {
-    data: [256]u8 = .{0} ** 256,
-    fn fromU64(v: u64) Value256 {
-        var r: Value256 = .{};
+const Value56 = extern struct {
+    data: [56]u8 = .{0} ** 56,
+    fn fromU64(v: u64) Value56 {
+        var r: Value56 = .{};
         const bytes: [8]u8 = @bitCast(v);
-        inline for (0..32) |j| {
+        inline for (0..7) |j| {
             inline for (0..8) |i| r.data[j * 8 + i] = bytes[i];
         }
         return r;
@@ -70,7 +70,7 @@ fn makeValue(comptime V: type, i: u64) V {
 
 fn VerstableWrapper(comptime K: type, comptime V: type) type {
     const key_name = if (K == u64) "u64" else if (K == u16) "u16" else if (K == []const u8) "str" else @compileError("Unsupported key type");
-    const val_name = if (V == void) "void" else if (V == Value4) "val4" else if (V == Value64) "val64" else if (V == Value256) "val256" else @compileError("Unsupported value type");
+    const val_name = if (V == void) "void" else if (V == Value4) "val4" else if (V == Value64) "val64" else if (V == Value56) "val56" else @compileError("Unsupported value type");
     const prefix = "vt_" ++ key_name ++ "_" ++ val_name ++ "_";
 
     return struct {
@@ -130,7 +130,7 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
         }
 
         // TheHashTable benchmarks
-        fn benchOurs(comptime Op: enum { insert, lookup, miss, delete, iter, churn }, comptime size: usize, keys: []const K, extra: anytype, alloc: std.mem.Allocator) !u64 {
+        fn benchOurs(comptime Op: enum { insert, update, lookup, miss, delete, iter, churn, mixed }, comptime size: usize, keys: []const K, extra: anytype, alloc: std.mem.Allocator) !u64 {
             const Map = TheHashTable(K, V);
             var total: u64 = 0;
 
@@ -139,6 +139,8 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                 defer map.deinit();
 
                 // Setup (except for insert which measures this)
+                // Churn starts half-full to stress add/remove cycles
+                // Mixed starts full to simulate realistic steady-state usage
                 if (Op != .insert) {
                     const setup_keys = if (Op == .churn) keys[0 .. size / 2] else keys[0..size];
                     for (setup_keys) |k| {
@@ -150,6 +152,10 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                 switch (Op) {
                     .insert => for (keys[0..size]) |k| {
                         if (is_set) try map.add(k) else try map.put(k, makeValue(V, keyToU64(k)));
+                    },
+                    .update => for (keys[0..size]) |k| {
+                        // Update existing keys with new values (table already full)
+                        if (is_set) try map.add(k) else try map.put(k, makeValue(V, keyToU64(k) +% 1));
                     },
                     .lookup => {
                         var found: u64 = 0;
@@ -192,6 +198,50 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                             } else _ = map.remove(keys[idx]);
                         }
                     },
+                    .mixed => {
+                        // Realistic mixed workload: 65% hit, 10% miss, 10% update, 10% delete, 5% iter
+                        // Pre-generated ops and indices are passed via extra
+                        const mixed_data: *const MixedOpsData(K) = @ptrCast(@alignCast(extra));
+                        var found: u64 = 0;
+                        const ops = mixed_data.ops[0..size];
+                        const indices = mixed_data.indices[0..size];
+                        const hit_keys = mixed_data.hit_keys;
+                        const miss_keys_ptr = mixed_data.miss_keys;
+                        for (ops, indices) |op, idx| {
+                            switch (op) {
+                                0 => { // lookup hit
+                                    if (is_set) {
+                                        if (map.contains(hit_keys[idx])) found += 1;
+                                    } else {
+                                        if (map.get(hit_keys[idx]) != null) found += 1;
+                                    }
+                                },
+                                1 => { // lookup miss
+                                    if (is_set) {
+                                        if (!map.contains(miss_keys_ptr[idx])) found += 1;
+                                    } else {
+                                        if (map.get(miss_keys_ptr[idx]) == null) found += 1;
+                                    }
+                                },
+                                2 => { // update
+                                    if (is_set) try map.add(hit_keys[idx]) else try map.put(hit_keys[idx], makeValue(V, keyToU64(hit_keys[idx])));
+                                },
+                                3 => { // delete
+                                    _ = map.remove(hit_keys[idx]);
+                                },
+                                else => { // iter
+                                    var it = map.iterator();
+                                    var steps: usize = 0;
+                                    while (it.next()) |_| {
+                                        found += 1;
+                                        steps += 1;
+                                        if (steps >= 10) break;
+                                    }
+                                },
+                            }
+                        }
+                        std.mem.doNotOptimizeAway(found);
+                    },
                 }
                 total += timer.read();
             }
@@ -199,7 +249,7 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
         }
 
         // std.HashMap benchmarks
-        fn benchStd(comptime Op: enum { insert, lookup, miss, delete, iter, churn }, comptime size: usize, keys: []const K, extra: anytype, alloc: std.mem.Allocator) !u64 {
+        fn benchStd(comptime Op: enum { insert, update, lookup, miss, delete, iter, churn, mixed }, comptime size: usize, keys: []const K, extra: anytype, alloc: std.mem.Allocator) !u64 {
             const StdMap = if (is_string) std.StringHashMap(V) else std.AutoHashMap(K, V);
             var total: u64 = 0;
 
@@ -216,6 +266,10 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                 switch (Op) {
                     .insert => for (keys[0..size]) |k| {
                         try map.put(k, makeValue(V, keyToU64(k)));
+                    },
+                    .update => for (keys[0..size]) |k| {
+                        // Update existing keys with new values (table already full)
+                        try map.put(k, makeValue(V, keyToU64(k) +% 1));
                     },
                     .lookup => {
                         var found: u64 = 0;
@@ -250,6 +304,42 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                             } else _ = map.remove(keys[idx]);
                         }
                     },
+                    .mixed => {
+                        // Realistic mixed workload: 65% hit, 10% miss, 10% update, 10% delete, 5% iter
+                        // Pre-generated ops and indices are passed via extra
+                        const mixed_data: *const MixedOpsData(K) = @ptrCast(@alignCast(extra));
+                        var found: u64 = 0;
+                        const ops = mixed_data.ops[0..size];
+                        const indices = mixed_data.indices[0..size];
+                        const hit_keys = mixed_data.hit_keys;
+                        const miss_keys_ptr = mixed_data.miss_keys;
+                        for (ops, indices) |op, idx| {
+                            switch (op) {
+                                0 => { // lookup hit
+                                    if (map.get(hit_keys[idx]) != null) found += 1;
+                                },
+                                1 => { // lookup miss
+                                    if (map.get(miss_keys_ptr[idx]) == null) found += 1;
+                                },
+                                2 => { // update
+                                    try map.put(hit_keys[idx], makeValue(V, keyToU64(hit_keys[idx])));
+                                },
+                                3 => { // delete
+                                    _ = map.remove(hit_keys[idx]);
+                                },
+                                else => { // iter
+                                    var it = map.iterator();
+                                    var steps: usize = 0;
+                                    while (it.next()) |_| {
+                                        found += 1;
+                                        steps += 1;
+                                        if (steps >= 10) break;
+                                    }
+                                },
+                            }
+                        }
+                        std.mem.doNotOptimizeAway(found);
+                    },
                 }
                 total += timer.read();
             }
@@ -257,7 +347,7 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
         }
 
         // Verstable benchmarks
-        fn benchVt(comptime Op: enum { insert, lookup, miss, delete, iter, churn }, comptime size: usize, keys: []const K, extra: anytype) !u64 {
+        fn benchVt(comptime Op: enum { insert, update, lookup, miss, delete, iter, churn, mixed }, comptime size: usize, keys: []const K, extra: anytype) !u64 {
             const VtMap = VerstableWrapper(K, V);
             var total: u64 = 0;
 
@@ -274,6 +364,10 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                 switch (Op) {
                     .insert => for (keys[0..size]) |k| {
                         _ = map.insert(k, makeValue(V, keyToU64(k)));
+                    },
+                    .update => for (keys[0..size]) |k| {
+                        // Update existing keys with new values (table already full)
+                        _ = map.insert(k, makeValue(V, keyToU64(k) +% 1));
                     },
                     .lookup => {
                         var found: u64 = 0;
@@ -305,6 +399,42 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
                                 _ = map.insert(keys[idx], makeValue(V, keyToU64(keys[idx])));
                             } else _ = map.erase(keys[idx]);
                         }
+                    },
+                    .mixed => {
+                        // Realistic mixed workload: 65% hit, 10% miss, 10% update, 10% delete, 5% iter
+                        // Pre-generated ops and indices are passed via extra
+                        const mixed_data: *const MixedOpsData(K) = @ptrCast(@alignCast(extra));
+                        var found: u64 = 0;
+                        const ops = mixed_data.ops[0..size];
+                        const indices = mixed_data.indices[0..size];
+                        const hit_keys = mixed_data.hit_keys;
+                        const miss_keys_ptr = mixed_data.miss_keys;
+                        for (ops, indices) |op, idx| {
+                            switch (op) {
+                                0 => { // lookup hit
+                                    if (map.get(hit_keys[idx])) found += 1;
+                                },
+                                1 => { // lookup miss
+                                    if (!map.get(miss_keys_ptr[idx])) found += 1;
+                                },
+                                2 => { // update
+                                    _ = map.insert(hit_keys[idx], makeValue(V, keyToU64(hit_keys[idx])));
+                                },
+                                3 => { // delete
+                                    _ = map.erase(hit_keys[idx]);
+                                },
+                                else => { // iter
+                                    var iter = VtMap.firstFn(&map.map);
+                                    var steps: usize = 0;
+                                    while (VtMap.is_endFn(iter) == 0) : (iter = VtMap.nextFn(iter)) {
+                                        found += 1;
+                                        steps += 1;
+                                        if (steps >= 10) break;
+                                    }
+                                },
+                            }
+                        }
+                        std.mem.doNotOptimizeAway(found);
                     },
                 }
                 total += timer.read();
@@ -365,12 +495,45 @@ fn keyTypeName(comptime K: type) []const u8 {
 }
 
 fn valueTypeName(comptime V: type) []const u8 {
-    return if (V == void) "void (set)" else if (V == Value4) "4B" else if (V == Value64) "64B" else if (V == Value256) "256B" else "?";
+    return if (V == void) "void (set)" else if (V == Value4) "4B" else if (V == Value64) "64B" else if (V == Value56) "56B" else "?";
 }
 
 const Xoshiro = std.Random.Xoshiro256;
 fn makeRng(seed: u64) Xoshiro {
     return Xoshiro.init(seed);
+}
+
+/// Pre-generated operation sequence for Mixed benchmark to exclude RNG overhead from timing
+fn MixedOpsData(comptime K: type) type {
+    return struct {
+        ops: []u8, // 0=lookup_hit, 1=lookup_miss, 2=update, 3=delete, 4=iter
+        indices: []usize,
+        hit_keys: []const K,
+        miss_keys: []const K,
+    };
+}
+
+fn generateMixedOps(comptime size: usize, allocator: std.mem.Allocator) !struct { ops: []u8, indices: []usize } {
+    const ops = try allocator.alloc(u8, size);
+    const indices = try allocator.alloc(usize, size);
+
+    var rng = makeRng(22222);
+    for (0..size) |i| {
+        indices[i] = rng.random().int(usize) % size;
+        const op_roll = rng.random().int(u8) % 100;
+        if (op_roll < 65) {
+            ops[i] = 0; // lookup hit
+        } else if (op_roll < 75) {
+            ops[i] = 1; // lookup miss
+        } else if (op_roll < 85) {
+            ops[i] = 2; // update
+        } else if (op_roll < 95) {
+            ops[i] = 3; // delete
+        } else {
+            ops[i] = 4; // iter
+        }
+    }
+    return .{ .ops = ops, .indices = indices };
 }
 
 // ============================================================================
@@ -391,6 +554,17 @@ fn runComparison(
     const include_vt = K == u64 or K == u16 or K == []const u8;
     const std_name = if (K == []const u8) "std.StringHash" else "std.AutoHash ";
 
+    // Pre-generate mixed ops data (RNG outside timing)
+    const mixed_gen = try generateMixedOps(size, allocator);
+    defer allocator.free(mixed_gen.ops);
+    defer allocator.free(mixed_gen.indices);
+    const mixed_data = MixedOpsData(K){
+        .ops = mixed_gen.ops,
+        .indices = mixed_gen.indices,
+        .hit_keys = keys,
+        .miss_keys = miss_keys,
+    };
+
     std.debug.print("\n  {s} elements:\n", .{size_str});
     if (include_vt) {
         std.debug.print("  ┌────────────────┬───────────────┬───────────────┬───────────────┬───────────┬───────────┐\n", .{});
@@ -404,19 +578,28 @@ fn runComparison(
 
     const ops = [_]struct { name: []const u8, op: @TypeOf(.insert) }{
         .{ .name = "Rand. Insert", .op = .insert },
+        .{ .name = "Update", .op = .update },
         .{ .name = "Rand. Lookup", .op = .lookup },
         .{ .name = "Lookup Miss", .op = .miss },
         .{ .name = "Delete", .op = .delete },
         .{ .name = "Iteration", .op = .iter },
         .{ .name = "Churn", .op = .churn },
+        .{ .name = "Mixed", .op = .mixed },
     };
 
     inline for (ops) |o| {
-        const extra = if (o.op == .miss) miss_keys else if (o.op == .lookup) lookup_order else {};
-        const ours = try B.benchOurs(o.op, size, keys, extra, allocator) / size;
-        const std_val = try B.benchStd(o.op, size, keys, extra, allocator) / size;
-        const vt_val: ?u64 = if (include_vt) try B.benchVt(o.op, size, keys, extra) / size else null;
-        printRow(o.name, ours, vt_val, std_val);
+        if (o.op == .mixed) {
+            const ours = try B.benchOurs(.mixed, size, keys, &mixed_data, allocator) / size;
+            const std_val = try B.benchStd(.mixed, size, keys, &mixed_data, allocator) / size;
+            const vt_val: ?u64 = if (include_vt) try B.benchVt(.mixed, size, keys, &mixed_data) / size else null;
+            printRow(o.name, ours, vt_val, std_val);
+        } else {
+            const extra = if (o.op == .miss) miss_keys else if (o.op == .lookup) lookup_order else {};
+            const ours = try B.benchOurs(o.op, size, keys, extra, allocator) / size;
+            const std_val = try B.benchStd(o.op, size, keys, extra, allocator) / size;
+            const vt_val: ?u64 = if (include_vt) try B.benchVt(o.op, size, keys, extra) / size else null;
+            printRow(o.name, ours, vt_val, std_val);
+        }
     }
 
     if (include_vt) {
@@ -452,9 +635,9 @@ fn runComprehensiveBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("         Comprehensive Key/Value Type Combination Benchmarks                   \n", .{});
     std.debug.print("================================================================================\n", .{});
     std.debug.print("  Key types:   u16, u64, string                                                \n", .{});
-    std.debug.print("  Value types: void (set), 4B, 64B, 256B                                       \n", .{});
+    std.debug.print("  Value types: void (set), 4B, 64B, 56B                                        \n", .{});
     std.debug.print("  Sizes:       10, 1K, 65524 (u16) / 10, 1K, 100K (u64, string)                \n", .{});
-    std.debug.print("  Operations:  Rand Insert, Rand Lookup, Lookup Miss, Delete, Iteration, Churn \n", .{});
+    std.debug.print("  Operations:  Insert, Update, Lookup, Miss, Delete, Iter, Churn, Mixed       \n", .{});
     std.debug.print("================================================================================\n", .{});
 
     // u16 keys
@@ -474,7 +657,7 @@ fn runComprehensiveBenchmarks(allocator: std.mem.Allocator) !void {
         }
         rng.random().shuffle(usize, u16_order);
 
-        inline for (.{ void, Value4, Value64, Value256 }) |V| {
+        inline for (.{ void, Value4, Value64, Value56 }) |V| {
             try runAllSizes(u16, V, u16_keys, u16_miss, u16_order, allocator);
         }
     }
@@ -497,7 +680,7 @@ fn runComprehensiveBenchmarks(allocator: std.mem.Allocator) !void {
         }
         rng.random().shuffle(usize, u64_order);
 
-        inline for (.{ void, Value4, Value64, Value256 }) |V| {
+        inline for (.{ void, Value4, Value64, Value56 }) |V| {
             try runAllSizes(u64, V, u64_keys, u64_miss, u64_order, allocator);
         }
     }
@@ -523,7 +706,7 @@ fn runComprehensiveBenchmarks(allocator: std.mem.Allocator) !void {
         }
         rng.random().shuffle(usize, str_order);
 
-        inline for (.{ void, Value4, Value64, Value256 }) |V| {
+        inline for (.{ void, Value4, Value64, Value56 }) |V| {
             try runAllSizes([]const u8, V, str_keys, str_miss, str_order, allocator);
         }
     }

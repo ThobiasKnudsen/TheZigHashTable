@@ -7,12 +7,12 @@
 #include <stdbool.h>
 
 // ============================================================================
-// Value Types (matching Zig's Value4, Value64, Value256)
+// Value Types (matching Zig's Value4, Value64, Value56)
 // ============================================================================
 
 typedef struct { uint8_t data[4]; } val4_t;
 typedef struct { uint8_t data[64]; } val64_t;
-typedef struct { uint8_t data[256]; } val256_t;
+typedef struct { uint8_t data[56]; } val56_t;
 
 // String key type
 typedef struct {
@@ -107,26 +107,26 @@ static inline bool str_cmpr(str_key a, str_key b) {
 #include "../Verstable/verstable.h"
 
 // ============================================================================
-// Verstable Instantiations - Maps with val256_t
+// Verstable Instantiations - Maps with val56_t
 // ============================================================================
 
-#define NAME vt_u64_val256_internal
+#define NAME vt_u64_val56_internal
 #define KEY_TY uint64_t
-#define VAL_TY val256_t
+#define VAL_TY val56_t
 #define HASH_FN vt_hash_integer
 #define CMPR_FN vt_cmpr_integer
 #include "../Verstable/verstable.h"
 
-#define NAME vt_u16_val256_internal
+#define NAME vt_u16_val56_internal
 #define KEY_TY uint16_t
-#define VAL_TY val256_t
+#define VAL_TY val56_t
 #define HASH_FN vt_hash_integer
 #define CMPR_FN vt_cmpr_integer
 #include "../Verstable/verstable.h"
 
-#define NAME vt_str_val256_internal
+#define NAME vt_str_val56_internal
 #define KEY_TY str_key
-#define VAL_TY val256_t
+#define VAL_TY val56_t
 #define HASH_FN str_hash
 #define CMPR_FN str_cmpr
 #include "../Verstable/verstable.h"
@@ -324,7 +324,7 @@ DEFINE_INT_MAP_WRAPPERS(vt_u64_val64, uint64_t, val64_t, 64, vt_u64_val64_intern
 DEFINE_INT_MAP_WRAPPERS(vt_u16_val64, uint16_t, val64_t, 64, vt_u16_val64_internal)
 DEFINE_STR_MAP_WRAPPERS(vt_str_val64, val64_t, 64, vt_str_val64_internal)
 
-// Maps with 256-byte values
-DEFINE_INT_MAP_WRAPPERS(vt_u64_val256, uint64_t, val256_t, 256, vt_u64_val256_internal)
-DEFINE_INT_MAP_WRAPPERS(vt_u16_val256, uint16_t, val256_t, 256, vt_u16_val256_internal)
-DEFINE_STR_MAP_WRAPPERS(vt_str_val256, val256_t, 256, vt_str_val256_internal)
+// Maps with 56-byte values
+DEFINE_INT_MAP_WRAPPERS(vt_u64_val56, uint64_t, val56_t, 56, vt_u64_val56_internal)
+DEFINE_INT_MAP_WRAPPERS(vt_u16_val56, uint16_t, val56_t, 56, vt_u16_val56_internal)
+DEFINE_STR_MAP_WRAPPERS(vt_str_val56, val56_t, 56, vt_str_val56_internal)

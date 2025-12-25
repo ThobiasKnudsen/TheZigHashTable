@@ -23,8 +23,12 @@ const math = std.math;
 // Metadata Constants
 // ============================================================================
 
+/// Metadata type - u16 is compact and cache-efficient
+const MetaType = u16;
+const META_BITS = 16;
+
 /// Empty bucket marker
-const EMPTY: u16 = 0x0000;
+const EMPTY: MetaType = 0x0000;
 
 /// User-configurable trade-off: number of hash fragment bits.
 /// Higher values → better collision filtering (fewer expensive key equality checks, especially good for string keys)
@@ -33,14 +37,14 @@ const EMPTY: u16 = 0x0000;
 pub const HASH_FRAG_SIZE_BITS: usize = 8; // Change this single value to tune!
 
 /// Derived metadata masks (do not edit these directly)
-pub const HASH_FRAG_MASK: u16 = @as(u16, ((@as(u32, 1) << HASH_FRAG_SIZE_BITS) - 1) << (16 - HASH_FRAG_SIZE_BITS));
+pub const HASH_FRAG_MASK: MetaType = @as(MetaType, ((@as(u32, 1) << HASH_FRAG_SIZE_BITS) - 1) << (META_BITS - HASH_FRAG_SIZE_BITS));
 
-pub const IN_HOME_BUCKET_MASK: u16 = @as(u16, 1) << (15 - HASH_FRAG_SIZE_BITS);
+pub const IN_HOME_BUCKET_MASK: MetaType = @as(MetaType, 1) << (META_BITS - 1 - HASH_FRAG_SIZE_BITS);
 
-pub const DISPLACEMENT_MASK: u16 = (@as(u16, 1) << (15 - HASH_FRAG_SIZE_BITS)) - 1;
+pub const DISPLACEMENT_MASK: MetaType = (@as(MetaType, 1) << (META_BITS - 1 - HASH_FRAG_SIZE_BITS)) - 1;
 
 /// Minimum non-zero bucket count (must be power of two)
-const MIN_NONZERO_BUCKET_COUNT: usize = 8;
+const MIN_NONZERO_BUCKET_COUNT: usize = 16;
 
 /// Default maximum load factor (80%)
 const DEFAULT_MAX_LOAD: f32 = 0.80;
@@ -201,28 +205,28 @@ fn AutoEqlFn(comptime K: type) type {
 // ============================================================================
 
 /// Extracts the high HASH_FRAG_SIZE_BITS bits of the hash and places them into the fragment position.
-inline fn hashFrag(hash: u64) u16 {
-    return @as(u16, @truncate(hash >> (64 - HASH_FRAG_SIZE_BITS))) << (16 - HASH_FRAG_SIZE_BITS);
+inline fn hashFrag(hash: u64) MetaType {
+    return @as(MetaType, @truncate(hash >> (64 - HASH_FRAG_SIZE_BITS))) << (16 - HASH_FRAG_SIZE_BITS);
 }
 
 /// Standard quadratic probing formula.
 /// Guarantees all buckets are visited when bucket count is a power of two.
-inline fn quadratic(displacement: u16) usize {
+inline fn quadratic(displacement: MetaType) usize {
     const d: usize = displacement;
     return (d * d + d) / 2;
 }
 
 /// Find the first non-zero u16 in a group of 4 (64 bits).
 /// Used for fast iteration over metadata.
-inline fn firstNonZeroU16(val: u64) u32 {
+inline fn firstNonZeroMeta(val: u64) u32 {
     if (val == 0) return 4;
     return @ctz(val) / 16;
 }
 
 /// SIMD-accelerated version: find first non-zero u16 in 8 metadata entries
-inline fn firstNonZeroU16x8(metadata: [*]const u16) u32 {
-    const vec: @Vector(8, u16) = metadata[0..8].*;
-    const zero: @Vector(8, u16) = @splat(0);
+inline fn firstNonZeroMetax8(metadata: [*]const MetaType) u32 {
+    const vec: @Vector(8, MetaType) = metadata[0..8].*;
+    const zero: @Vector(8, MetaType) = @splat(0);
     const mask = vec != zero;
     const bits = @as(u8, @bitCast(mask));
     if (bits == 0) return 8;
@@ -269,12 +273,18 @@ pub fn TheHashTableWithFns(
     return struct {
         const Self = @This();
 
+        // For string keys, store full hash to avoid expensive comparisons
+        const is_string = @typeInfo(K) == .pointer and @typeInfo(K).pointer.size == .slice and @typeInfo(K).pointer.child == u8;
+
         /// Bucket contains key and optionally value
         pub const Bucket = if (is_set) struct {
             key: K,
+            // Store full hash for string keys to avoid expensive memcmp
+            full_hash: if (is_string) u64 else void = if (is_string) 0 else {},
         } else struct {
             key: K,
             val: V,
+            full_hash: if (is_string) u64 else void = if (is_string) 0 else {},
         };
 
         /// Iterator for traversing the table using SIMD-accelerated scanning.
@@ -321,7 +331,7 @@ pub fn TheHashTableWithFns(
                     const ptr: [*]const u8 = @ptrCast(metadata + self.index);
                     // Use unaligned read to avoid alignment issues
                     const group: u64 = std.mem.readInt(u64, ptr[0..8], .little);
-                    const offset = firstNonZeroU16(group);
+                    const offset = firstNonZeroMeta(group);
                     if (offset < 4) {
                         self.index += offset;
                         return;
@@ -346,12 +356,12 @@ pub fn TheHashTableWithFns(
         key_count: usize,
         buckets_mask: usize, // bucket_count - 1, or 0 if empty
         buckets: [*]Bucket,
-        metadata: [*]u16,
+        metadata: [*]MetaType,
         allocator: Allocator,
         max_load: f32,
 
         // Placeholder for empty tables (avoids null checks)
-        var empty_placeholder: [1]u16 = .{EMPTY};
+        var empty_placeholder: [1]MetaType = .{EMPTY};
 
         /// Initialize an empty hash table.
         pub fn init(allocator: Allocator) Self {
@@ -647,6 +657,9 @@ pub fn TheHashTableWithFns(
                 if (!is_set) {
                     self.buckets[home_bucket].val = value;
                 }
+                if (is_string) {
+                    self.buckets[home_bucket].full_hash = hash;
+                }
                 self.metadata[home_bucket] = frag | IN_HOME_BUCKET_MASK | DISPLACEMENT_MASK;
                 self.key_count += 1;
 
@@ -658,9 +671,13 @@ pub fn TheHashTableWithFns(
             if (!unique) {
                 var bucket = home_bucket;
                 while (true) {
-                    if ((self.metadata[bucket] & HASH_FRAG_MASK) == frag and
-                        eqlFn(self.buckets[bucket].key, key))
-                    {
+                    // For strings: compare full hash first (much cheaper than memcmp)
+                    const hash_match = if (is_string)
+                        self.buckets[bucket].full_hash == hash
+                    else
+                        (self.metadata[bucket] & HASH_FRAG_MASK) == frag;
+
+                    if (hash_match and eqlFn(self.buckets[bucket].key, key)) {
                         if (replace) {
                             self.buckets[bucket].key = key;
                             if (!is_set) {
@@ -697,6 +714,9 @@ pub fn TheHashTableWithFns(
             self.buckets[empty].key = key;
             if (!is_set) {
                 self.buckets[empty].val = value;
+            }
+            if (is_string) {
+                self.buckets[empty].full_hash = hash;
             }
             self.metadata[empty] = frag | (self.metadata[prev] & DISPLACEMENT_MASK);
             self.metadata[prev] = (self.metadata[prev] & ~DISPLACEMENT_MASK) | displacement;
@@ -744,9 +764,13 @@ pub fn TheHashTableWithFns(
 
             while (true) {
                 // Check current bucket for match
-                if ((self.metadata[bucket] & HASH_FRAG_MASK) == frag and
-                    eqlFn(self.buckets[bucket].key, key))
-                {
+                // For strings: compare full hash first (much cheaper than memcmp)
+                const hash_match = if (is_string)
+                    self.buckets[bucket].full_hash == hash
+                else
+                    (self.metadata[bucket] & HASH_FRAG_MASK) == frag;
+
+                if (hash_match and eqlFn(self.buckets[bucket].key, key)) {
                     return .{ .bucket_idx = bucket, .home_bucket = home_bucket };
                 }
 
@@ -764,13 +788,6 @@ pub fn TheHashTableWithFns(
 
                 // Prefetch the next bucket (we will access it next iteration)
                 @prefetch(&self.buckets[next_bucket], .{ .rw = .read, .locality = 1 });
-
-                // Optional: prefetch one step further ahead for longer chains
-                // const further_displacement = displacement + 1;
-                // if (further_displacement <= DISPLACEMENT_MASK) {
-                //     const further_bucket = (home_bucket + quadratic(further_displacement)) & self.buckets_mask;
-                //     @prefetch(&self.buckets[further_bucket], .{ .rw = .read, .locality = 1 });
-                // }
 
                 // Advance to next bucket
                 bucket = next_bucket;
@@ -831,11 +848,11 @@ pub fn TheHashTableWithFns(
 
         const FindEmptyResult = struct {
             index: usize,
-            displacement: u16,
+            displacement: MetaType,
         };
 
         inline fn findFirstEmpty(self: *Self, home_bucket: usize) ?FindEmptyResult {
-            var displacement: u16 = 1;
+            var displacement: MetaType = 1;
             var linear_displacement: usize = 1;
 
             while (true) {
@@ -853,7 +870,7 @@ pub fn TheHashTableWithFns(
             }
         }
 
-        inline fn findInsertLocationInChain(self: *Self, home_bucket: usize, displacement_to_empty: u16) usize {
+        inline fn findInsertLocationInChain(self: *Self, home_bucket: usize, displacement_to_empty: MetaType) usize {
             var candidate = home_bucket;
             while (true) {
                 const displacement = self.metadata[candidate] & DISPLACEMENT_MASK;
@@ -965,8 +982,8 @@ pub fn TheHashTableWithFns(
         fn metadataOffsetForCount(self: *const Self, bucket_count: usize) usize {
             _ = self;
             const bucket_size = bucket_count * @sizeOf(Bucket);
-            // Align to u16
-            return std.mem.alignForward(usize, bucket_size, @alignOf(u16));
+            // Align to MetaType
+            return std.mem.alignForward(usize, bucket_size, @alignOf(MetaType));
         }
 
         fn totalAllocSize(self: *const Self) usize {
@@ -974,7 +991,7 @@ pub fn TheHashTableWithFns(
         }
 
         fn totalAllocSizeForCount(self: *const Self, bucket_count: usize) usize {
-            return self.metadataOffsetForCount(bucket_count) + (bucket_count + 4) * @sizeOf(u16);
+            return self.metadataOffsetForCount(bucket_count) + (bucket_count + 4) * @sizeOf(MetaType);
         }
 
         fn minBucketCountForSize(self: *const Self, size: usize) usize {
