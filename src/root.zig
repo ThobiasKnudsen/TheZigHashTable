@@ -26,15 +26,14 @@ const math = std.math;
 /// Empty bucket marker
 const EMPTY: u16 = 0x0000;
 
-/// Mask for the 4-bit hash fragment (bits 12-15)
-const HASH_FRAG_MASK: u16 = 0xF000;
+/// Mask for the 8-bit hash fragment (bits 8-15)
+const HASH_FRAG_MASK: u16 = 0xFF00;
 
-/// Flag indicating the key in this bucket belongs here (bit 11)
-const IN_HOME_BUCKET_MASK: u16 = 0x0800;
+/// Flag indicating the key in this bucket belongs here (bit 7)
+const IN_HOME_BUCKET_MASK: u16 = 0x0080;
 
-/// Mask for the 11-bit displacement to next key in chain (bits 0-10)
-/// Also serves as the displacement limit / end-of-chain marker
-const DISPLACEMENT_MASK: u16 = 0x07FF;
+/// Mask for the 7-bit displacement (bits 0-6). Also the end-of-chain marker.
+const DISPLACEMENT_MASK: u16 = 0x007F;
 
 /// Minimum non-zero bucket count (must be power of two)
 const MIN_NONZERO_BUCKET_COUNT: usize = 8;
@@ -197,11 +196,10 @@ fn AutoEqlFn(comptime K: type) type {
 // Metadata Helpers
 // ============================================================================
 
-/// Extracts the 4-bit hash fragment from a 64-bit hash code.
-/// We take the highest four bits so that keys mapping to the same bucket
-/// have distinct hash fragments.
+/// Extracts the 8-bit hash fragment from the highest bits of the 64-bit hash.
 inline fn hashFrag(hash: u64) u16 {
-    return @as(u16, @truncate(hash >> 48)) & HASH_FRAG_MASK;
+    // Top 8 bits of the hash → placed into metadata bits 8-15
+    return @as(u16, @truncate(hash >> 56)) << 8;
 }
 
 /// Standard quadratic probing formula.
