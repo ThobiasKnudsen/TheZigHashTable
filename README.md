@@ -5,7 +5,6 @@ A high-performance hash table for Zig, inspired by [Verstable](https://github.co
 ## Features
 
 - **Unified Map/Set**: `TheHashTable(K, V)` is a map; `TheHashTable(K, void)` is a set
-- **Fast operations**: O(1) average for insert, lookup, and delete
 - **Tombstone-free deletion**: No performance degradation after many deletes
 - **Low memory overhead**: Only 2 bytes of metadata per bucket
 - **SIMD-accelerated iteration**: Vectorized metadata scanning for fast iteration
