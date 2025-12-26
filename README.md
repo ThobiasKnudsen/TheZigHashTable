@@ -1,28 +1,12 @@
 # TheHashTable
 
-**A Zig hash table that is on avarage faster than Abseil, Boost, and Ankerl over all mixed workloads**
+**The Zig hash table that is on avarage faster than Abseil, Boost, and Ankerl over all mixed workloads. Boost is considered to be the fastest hashtable and is slightly faster than ThisHashTable on large tables with integer keys but lags behind on smaller tables and string keys. So on average TheHashTable is faster**
 
 [![Zig](https://img.shields.io/badge/zig-0.15.2+-orange?logo=zig)](https://ziglang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/ThobiasKnudsen/TheZigHashTable/actions/workflows/ci.yml/badge.svg)](https://github.com/ThobiasKnudsen/TheZigHashTable/actions)
 
-> For mixed read-heavy workloads (65% reads), TheHashTable outperforms the fastest C++ hash tables while maintaining a clean, idiomatic Zig API. Inspired by [Verstable](https://github.com/JacksonAllan/Verstable).
-
-## Performance Highlights
-
-| Benchmark (100K elements) | TheHashTable | Abseil | Boost | Ankerl | std |
-|---------------------------|:------------:|:------:|:-----:|:------:|:---:|
-| **String Mixed (65% reads)** | **72 ns** | 194 ns | 192 ns | 222 ns | 62 ns |
-| **u64 Mixed Workload** | **17 ns** | 15 ns | 14 ns | 30 ns | 24 ns |
-| **Tombstone Deletion** | **15 ns** | 15 ns | 9 ns | 25 ns | 25 ns |
-| **Reserved Insert** | **15 ns** | 14 ns | 19 ns | 29 ns | 14 ns |
-
-<details>
-<summary>Full benchmark results</summary>
-
-Run `zig build benchmark` to reproduce. See [BENCHMARKS.md](BENCHMARKS.md) for complete tables.
-
-</details>
+Run `zig build benchmark` to reproduce the benchmarks. See [BENCHMARKS.md](BENCHMARKS.md) for complete tables.
 
 ## Why TheHashTable?
 
