@@ -887,6 +887,115 @@ const BenchResults = struct {
     std_val: BenchStats,
 };
 
+// ============================================================================
+// Accumulator for Overall Summary
+// ============================================================================
+
+const NUM_OPS = 16; // Number of benchmark operations
+
+const OpAccumulator = struct {
+    ours_sum: u64 = 0,
+    absl_sum: u64 = 0,
+    boost_sum: u64 = 0,
+    ankerl_sum: u64 = 0,
+    std_sum: u64 = 0,
+    count: u64 = 0,
+
+    fn add(self: *OpAccumulator, r: BenchResults) void {
+        self.ours_sum += r.ours.mean;
+        self.absl_sum += r.absl.mean;
+        self.boost_sum += r.boost.mean;
+        self.ankerl_sum += r.ankerl.mean;
+        self.std_sum += r.std_val.mean;
+        self.count += 1;
+    }
+
+    fn avgOurs(self: OpAccumulator) u64 {
+        return if (self.count > 0) self.ours_sum / self.count else 0;
+    }
+    fn avgAbsl(self: OpAccumulator) u64 {
+        return if (self.count > 0) self.absl_sum / self.count else 0;
+    }
+    fn avgBoost(self: OpAccumulator) u64 {
+        return if (self.count > 0) self.boost_sum / self.count else 0;
+    }
+    fn avgAnkerl(self: OpAccumulator) u64 {
+        return if (self.count > 0) self.ankerl_sum / self.count else 0;
+    }
+    fn avgStd(self: OpAccumulator) u64 {
+        return if (self.count > 0) self.std_sum / self.count else 0;
+    }
+};
+
+const GlobalAccumulator = struct {
+    // Per-operation accumulators
+    insert: OpAccumulator = .{},
+    insert_seq: OpAccumulator = .{},
+    insert_reserved: OpAccumulator = .{},
+    update: OpAccumulator = .{},
+    lookup: OpAccumulator = .{},
+    high_load: OpAccumulator = .{},
+    miss: OpAccumulator = .{},
+    tombstone: OpAccumulator = .{},
+    delete: OpAccumulator = .{},
+    iter: OpAccumulator = .{},
+    churn: OpAccumulator = .{},
+    mixed: OpAccumulator = .{},
+    read_heavy: OpAccumulator = .{},
+    write_heavy: OpAccumulator = .{},
+    update_heavy: OpAccumulator = .{},
+    zipfian: OpAccumulator = .{},
+
+    fn printSummary(self: *GlobalAccumulator) void {
+        std.debug.print("\n╔══════════════════════════════════════════════════════════════════════════════╗\n", .{});
+        std.debug.print("║                    OVERALL AVERAGE (All Key/Value/Size Combinations)         ║\n", .{});
+        std.debug.print("╚══════════════════════════════════════════════════════════════════════════════╝\n", .{});
+
+        std.debug.print("\n════════════════════════════════════════════════════════════════════════════════\n", .{});
+        std.debug.print("  Average of all {d} configurations (3 key types × 3 value types × 3 sizes)\n", .{self.insert.count});
+        std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
+
+        std.debug.print("\n  ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
+        std.debug.print("  │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+        std.debug.print("  ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
+
+        printAvgRow("Rand. Insert", self.insert);
+        printAvgRow("Seq. Insert", self.insert_seq);
+        printAvgRow("Reserved Ins.", self.insert_reserved);
+        printAvgRow("Update", self.update);
+        printAvgRow("Rand. Lookup", self.lookup);
+        printAvgRow("High Load", self.high_load);
+        printAvgRow("Lookup Miss", self.miss);
+        printAvgRow("Tombstone", self.tombstone);
+        printAvgRow("Delete", self.delete);
+        printAvgRow("Iteration", self.iter);
+        printAvgRow("Churn", self.churn);
+        printAvgRow("Mixed", self.mixed);
+        printAvgRow("Read-Heavy", self.read_heavy);
+        printAvgRow("Write-Heavy", self.write_heavy);
+        printAvgRow("Update-Heavy", self.update_heavy);
+        printAvgRow("Zipfian", self.zipfian);
+
+        std.debug.print("  └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘\n", .{});
+    }
+};
+
+fn printAvgRow(name: []const u8, acc: OpAccumulator) void {
+    std.debug.print("  │ {s:<14} │", .{name});
+    printTime(acc.avgOurs());
+    std.debug.print(" │", .{});
+    printTime(acc.avgAbsl());
+    std.debug.print(" │", .{});
+    printTime(acc.avgBoost());
+    std.debug.print(" │", .{});
+    printTime(acc.avgAnkerl());
+    std.debug.print(" │", .{});
+    printTime(acc.avgStd());
+    std.debug.print(" │\n", .{});
+}
+
+var g_accumulator: GlobalAccumulator = .{};
+
 fn printRow(name: []const u8, r: BenchResults) void {
     std.debug.print("  │ {s:<14} │", .{name});
     printTime(r.ours.mean);
@@ -1080,13 +1189,35 @@ fn runComparison(
                 ankerl_per[i] = ankerl[i] / divisor;
             }
 
-            printRow(name, .{
+            const results = BenchResults{
                 .ours = BenchStats.compute(&ours_per),
                 .absl = BenchStats.compute(&absl_per),
                 .boost = BenchStats.compute(&boost_per),
                 .ankerl = BenchStats.compute(&ankerl_per),
                 .std_val = BenchStats.compute(&std_per),
-            });
+            };
+
+            printRow(name, results);
+
+            // Accumulate for summary
+            switch (op) {
+                .insert => g_accumulator.insert.add(results),
+                .insert_seq => g_accumulator.insert_seq.add(results),
+                .insert_reserved => g_accumulator.insert_reserved.add(results),
+                .update => g_accumulator.update.add(results),
+                .lookup => g_accumulator.lookup.add(results),
+                .high_load => g_accumulator.high_load.add(results),
+                .miss => g_accumulator.miss.add(results),
+                .tombstone => g_accumulator.tombstone.add(results),
+                .delete => g_accumulator.delete.add(results),
+                .iter => g_accumulator.iter.add(results),
+                .churn => g_accumulator.churn.add(results),
+                .mixed => g_accumulator.mixed.add(results),
+                .read_heavy => g_accumulator.read_heavy.add(results),
+                .write_heavy => g_accumulator.write_heavy.add(results),
+                .update_heavy => g_accumulator.update_heavy.add(results),
+                .zipfian => g_accumulator.zipfian.add(results),
+            }
         }
     }.run;
 
@@ -1486,6 +1617,10 @@ pub fn main() !void {
     }
 
     try runBenchmarks(allocator);
+
+    // Print overall summary table
+    g_accumulator.printSummary();
+
     try runMemoryBenchmarks(allocator);
     std.debug.print("\nBenchmark complete.\n", .{});
 }
