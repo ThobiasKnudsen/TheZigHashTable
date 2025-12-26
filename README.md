@@ -1,6 +1,6 @@
 # TheHashTable
 
-**A Zig hash table that beats Abseil, Boost, and Ankerl on mixed workloads.**
+**A Zig hash table that is on avarage faster than Abseil, Boost, and Ankerl over all mixed workloads**
 
 [![Zig](https://img.shields.io/badge/zig-0.15.2+-orange?logo=zig)](https://ziglang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
