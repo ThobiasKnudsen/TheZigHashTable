@@ -1,3 +1,22 @@
-build/
+# Zig
 .zig-cache/
 zig-out/
+zig-cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib

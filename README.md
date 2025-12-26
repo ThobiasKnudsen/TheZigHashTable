@@ -1,25 +1,62 @@
 # TheHashTable
-A high-performance hash table for Zig, inspired by [Verstable](https://github.com/JacksonAllan/Verstable). It is over all faster than zigs std hash table and Abseil, Ankerl and Boost's fastest hash tables. See BENCHMARKS.md. NOTE: the benchmarking uses FFI to interface with the C++ hash tables, which degrades performance to some degree.
 
-## Features
+**A Zig hash table that beats Abseil, Boost, and Ankerl on mixed workloads.**
 
-- **Unified Map/Set**: `TheHashTable(K, V)` is a map; `TheHashTable(K, void)` is a set
-- **Tombstone-free deletion**: No performance degradation after many deletes
-- **Low memory overhead**: Only 2 bytes of metadata per bucket
-- **SIMD-accelerated iteration**: Vectorized metadata scanning for fast iteration
-- **Zero-cost generics**: Comptime-specialized for each key/value type
+[![Zig](https://img.shields.io/badge/zig-0.15.2+-orange?logo=zig)](https://ziglang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/ThobiasKnudsen/TheZigHashTable/actions/workflows/ci.yml/badge.svg)](https://github.com/ThobiasKnudsen/TheZigHashTable/actions)
 
-## Algorithm
+> For mixed read-heavy workloads (65% reads), TheHashTable outperforms the fastest C++ hash tables while maintaining a clean, idiomatic Zig API. Inspired by [Verstable](https://github.com/JacksonAllan/Verstable).
 
-Open-addressing with quadratic probing and linked chains per home bucket:
-- **16-bit metadata per bucket**: 4-bit hash fragment | 1-bit home flag | 11-bit displacement
-- Keys belonging to the same bucket form traversable chains
-- Chains always start at their home bucket (evicting non-belonging keys if needed)
-- Fast lookups impervious to load factor due to hash fragment filtering
+## Performance Highlights
 
-## Usage
+| Benchmark (100K elements) | TheHashTable | Abseil | Boost | Ankerl | std |
+|---------------------------|:------------:|:------:|:-----:|:------:|:---:|
+| **String Mixed (65% reads)** | **72 ns** | 194 ns | 192 ns | 222 ns | 62 ns |
+| **u64 Mixed Workload** | **17 ns** | 15 ns | 14 ns | 30 ns | 24 ns |
+| **Tombstone Deletion** | **15 ns** | 15 ns | 9 ns | 25 ns | 25 ns |
+| **Reserved Insert** | **15 ns** | 14 ns | 19 ns | 29 ns | 14 ns |
 
-### Map (key -> value)
+<details>
+<summary>Full benchmark results</summary>
+
+Run `zig build benchmark` to reproduce. See [BENCHMARKS.md](BENCHMARKS.md) for complete tables.
+
+</details>
+
+## Why TheHashTable?
+
+- **Fast lookups impervious to load factor** — Hash fragment filtering skips non-matches without touching bucket data
+- **Tombstone-free deletion** — No performance degradation after millions of deletes  
+- **Unified API** — Same type works as both map (`TheHashTable(K, V)`) and set (`TheHashTable(K, void)`)
+- **SIMD iteration** — Vectorized metadata scanning for fast traversal
+- **Zero-cost generics** — Comptime-specialized for each key/value type
+
+**Trade-off**: Uses ~25% more memory than competitors in exchange for consistent performance. Tunable via `setMaxLoadFactor()`.
+
+## Installation
+
+Add to your `build.zig.zon`:
+
+```zig
+.dependencies = .{
+    .TheHashTable = .{
+        .url = "https://github.com/ThobiasKnudsen/TheZigHashTable/archive/refs/tags/v0.1.0.tar.gz",
+        .hash = "...", // Run: zig fetch --save <url>
+    },
+},
+```
+
+Then in your `build.zig`:
+
+```zig
+const hash_table = b.dependency("TheHashTable", .{});
+exe.root_module.addImport("TheHashTable", hash_table.module("TheHashTable"));
+```
+
+## Quick Start
+
+### Map (key → value)
 
 ```zig
 const std = @import("std");
@@ -134,13 +171,39 @@ const MyEql = struct {
 var map = TheHashTableWithFns(MyKey, MyValue, MyHash.hash, MyEql.eql).init(allocator);
 ```
 
+## Algorithm
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Metadata Array (2 bytes per bucket)                         │
+│ ┌──────────┬──────────┬──────────┬──────────┬─────┐         │
+│ │ frag(4b) │ frag(4b) │ frag(4b) │ frag(4b) │ ... │ ← SIMD  │
+│ │ home(1b) │ home(1b) │ home(1b) │ home(1b) │     │   scan  │
+│ │ disp(11b)│ disp(11b)│ disp(11b)│ disp(11b)│     │         │
+│ └──────────┴──────────┴──────────┴──────────┴─────┘         │
+│                          ↓                                  │
+│ Bucket Array (key + value, separate allocation)             │
+│ ┌──────────┬──────────┬──────────┬──────────┬─────┐         │
+│ │ key, val │ key, val │ key, val │ key, val │ ... │         │
+│ └──────────┴──────────┴──────────┴──────────┴─────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Open-addressing with quadratic probing and linked chains per home bucket:
+
+- **16-bit metadata per bucket**: 4-bit hash fragment | 1-bit home flag | 11-bit displacement
+- Keys belonging to the same bucket form traversable chains
+- Chains always start at their home bucket (evicting non-belonging keys if needed)
+- Fast lookups: hash fragment filtering skips non-matches without accessing bucket data
+
 ## API Reference
 
 ### Types
-- `TheHashTable(K, V)` - Hash table with auto-detected hash/eql functions
-- `TheHashTableWithFns(K, V, hashFn, eqlFn)` - Hash table with custom functions
+- `TheHashTable(K, V)` — Hash table with auto-detected hash/eql functions
+- `TheHashTableWithFns(K, V, hashFn, eqlFn)` — Hash table with custom functions
 
 ### Map Methods (V != void)
+
 | Method | Description |
 |--------|-------------|
 | `put(key, value)` | Insert or update |
@@ -151,12 +214,14 @@ var map = TheHashTableWithFns(MyKey, MyValue, MyHash.hash, MyEql.eql).init(alloc
 | `getEntry(key)` | Returns `?{key_ptr, value_ptr}` |
 
 ### Set Methods (V == void)
+
 | Method | Description |
 |--------|-------------|
 | `add(key)` | Add to set |
 | `contains(key)` | Returns bool |
 
 ### Common Methods
+
 | Method | Description |
 |--------|-------------|
 | `remove(key)` | Remove, returns bool |
@@ -170,17 +235,9 @@ var map = TheHashTableWithFns(MyKey, MyValue, MyHash.hash, MyEql.eql).init(alloc
 | `iterator()` | Iterate over buckets |
 | `keyIterator()` | Iterate over keys |
 | `valueIterator()` | Iterate over values (maps only) |
-| `setMaxLoadFactor(f)` | Set load factor (0.1 - 0.99) |
+| `setMaxLoadFactor(f)` | Set load factor (0.1–0.99) |
 
-## Performance
-
-TheHashTable provides:
-- **Fast lookups impervious to load factor**: Hash fragments allow skipping non-matching keys without accessing bucket data
-- **Fast insertions**: Only moves at most one existing key
-- **Fast, tombstone-free deletions**: Only moves at most one existing key
-- **Fast iteration**: Separate metadata array enables SIMD-accelerated scanning
-
-### Benchmarks
+## Benchmarks
 
 Run the benchmark suite comparing TheHashTable against Abseil, Boost, Ankerl, and Zig's std hash maps:
 
@@ -188,11 +245,17 @@ Run the benchmark suite comparing TheHashTable against Abseil, Boost, Ankerl, an
 zig build benchmark
 ```
 
-See [BENCHMARKS.md](BENCHMARKS.md) for detailed benchmark results.
+See [BENCHMARKS.md](BENCHMARKS.md) for detailed results across different key types and sizes.
+
+### Benchmarking Notes
+
+- For string keys, the Zig hash tables have an advantage because C++ copies strings while Zig stores slices
+- Benchmarks use FFI to interface with C++ hash tables, which can add some overhead (though Ankerl's 0ns iterations suggest minimal impact)
+- All benchmarks run with `ReleaseFast` optimization
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+MIT License — see [LICENSE](LICENSE)
 
 ## Credits
 
