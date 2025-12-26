@@ -198,7 +198,7 @@ fn Benchmarks(comptime K: type, comptime V: type) type {
             return if (K == u64) key else if (K == u32) key else 0;
         }
 
-        fn benchOurs(comptime Op: BenchOp, comptime size: usize, keys: []const K, extra: anytype, alloc: std.mem.Allocator) ![BENCHMARK_ITERATIONS]u64 {
+        fn benchThis(comptime Op: BenchOp, comptime size: usize, keys: []const K, extra: anytype, alloc: std.mem.Allocator) ![BENCHMARK_ITERATIONS]u64 {
             const Map = TheHashTable(K, V);
             var times: [BENCHMARK_ITERATIONS]u64 = undefined;
 
@@ -715,7 +715,7 @@ fn runComparison(
 
     std.debug.print("\n  {s} elements:\n", .{comptime formatSize(size)});
     std.debug.print("  ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Operation      │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
 
     const runOp = struct {
@@ -727,7 +727,7 @@ fn runComparison(
             var boost_per: [BENCHMARK_ITERATIONS]u64 = undefined;
             var ankerl_per: [BENCHMARK_ITERATIONS]u64 = undefined;
 
-            const ours = try B.benchOurs(op, s, k, extra, alloc);
+            const ours = try B.benchThis(op, s, k, extra, alloc);
             const std_t = try B.benchStd(op, s, k, extra, alloc);
             const absl = try B.benchAbsl(op, s, k, extra);
             const boost = try B.benchBoost(op, s, k, extra);
@@ -819,7 +819,7 @@ fn runMemoryBenchmark(comptime K: type, comptime V: type, comptime size: usize, 
     const is_set = V == void;
     const is_string = K == []const u8;
 
-    // Ours
+    // This
     var ours_mem: usize = 0;
     {
         const Map = TheHashTable(K, V);
@@ -915,7 +915,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  u32 key → void (set)\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark(u32, void, SIZE_1K, u32_keys, allocator);
     try runMemoryBenchmark(u32, void, SIZE_100K, u32_keys, allocator);
@@ -927,7 +927,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  u32 key → 4B value\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark(u32, Value4, SIZE_1K, u32_keys, allocator);
     try runMemoryBenchmark(u32, Value4, SIZE_100K, u32_keys, allocator);
@@ -948,7 +948,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  u64 key → void (set)\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark(u64, void, SIZE_1K, u64_keys, allocator);
     try runMemoryBenchmark(u64, void, SIZE_100K, u64_keys, allocator);
@@ -960,7 +960,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  u64 key → 4B value\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark(u64, Value4, SIZE_1K, u64_keys, allocator);
     try runMemoryBenchmark(u64, Value4, SIZE_100K, u64_keys, allocator);
@@ -972,7 +972,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  u64 key → 64B value\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark(u64, Value64, SIZE_1K, u64_keys, allocator);
     try runMemoryBenchmark(u64, Value64, SIZE_100K, u64_keys, allocator);
@@ -997,7 +997,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  string key → void (set)\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark([]const u8, void, SIZE_1K, str_keys, allocator);
     try runMemoryBenchmark([]const u8, void, SIZE_100K, str_keys, allocator);
@@ -1008,7 +1008,7 @@ fn runMemoryBenchmarks(allocator: std.mem.Allocator) !void {
     std.debug.print("  string key → 4B value\n", .{});
     std.debug.print("════════════════════════════════════════════════════════════════════════════════\n", .{});
     std.debug.print("  ┌──────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n", .{});
-    std.debug.print("  │ Size         │ Ours     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
+    std.debug.print("  │ Size         │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │\n", .{});
     std.debug.print("  ├──────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n", .{});
     try runMemoryBenchmark([]const u8, Value4, SIZE_1K, str_keys, allocator);
     try runMemoryBenchmark([]const u8, Value4, SIZE_100K, str_keys, allocator);
@@ -1123,7 +1123,7 @@ pub fn main() !void {
     std.debug.print("                      TheHashTable Benchmark Suite v2                          \n", .{});
     std.debug.print("                                                                                \n", .{});
     std.debug.print("  Comparing:                                                                    \n", .{});
-    std.debug.print("  - TheHashTable (Zig) — \"Ours\"                                                 \n", .{});
+    std.debug.print("  - TheHashTable (Zig) — \"This\"                                                 \n", .{});
     std.debug.print("  - Abseil (C++):  flat_hash_map                                                \n", .{});
     std.debug.print("  - Boost (C++):   unordered_flat_map                                           \n", .{});
     std.debug.print("  - Ankerl (C++):  unordered_dense                                              \n", .{});

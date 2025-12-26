@@ -8,23 +8,6 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Zig
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.15.2
-      
-      - name: Run tests
-        run: zig build test
-      
-      - name: Build library
-        run: zig build
-
-  # Optional: Run on multiple platforms
-  test-matrix:
     strategy:
       fail-fast: false
       matrix:
@@ -40,4 +23,3 @@ jobs:
       
       - name: Run tests
         run: zig build test
-
