@@ -1,537 +1,646 @@
 ### run "zig build benchmark", and you'll get this:
 ```
+
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                           u32 Integer Keys                                   ║
+║                           u32 Integer Keys                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 ════════════════════════════════════════════════════════════════════════════════
   u32 key → void (set) value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    47 ns │   249 ns │    33 ns │    43 ns │    35 ns │
-  │ Seq. Insert    │    16 ns │    30 ns │    25 ns │    32 ns │    24 ns │
-  │ Reserved Ins.  │    12 ns │    30 ns │    25 ns │    33 ns │    15 ns │
-  │ Update         │    10 ns │    13 ns │    11 ns │    12 ns │    16 ns │
-  │ Rand. Lookup   │     9 ns │    13 ns │     9 ns │     9 ns │    19 ns │
-  │ High Load      │     9 ns │     9 ns │     7 ns │    10 ns │    17 ns │
-  │ Lookup Miss    │     9 ns │     9 ns │     8 ns │    12 ns │    14 ns │
-  │ Tombstone      │    12 ns │    29 ns │    21 ns │    16 ns │    15 ns │
-  │ Delete         │     9 ns │    24 ns │    23 ns │    15 ns │    14 ns │
-  │ Iteration      │     8 ns │     8 ns │     8 ns │     4 ns │     6 ns │
-  │ Churn          │    13 ns │    16 ns │    11 ns │    12 ns │    18 ns │
-  │ Mixed          │    21 ns │    27 ns │    23 ns │    27 ns │    33 ns │
+  │ Rand. Insert   │    26 ns │    50 ns │    31 ns │    25 ns │    23 ns │
+  │ Seq. Insert    │    18 ns │    25 ns │    32 ns │    18 ns │    20 ns │
+  │ Reserved Ins.  │    11 ns │    31 ns │    26 ns │    18 ns │    12 ns │
+  │ Update         │     7 ns │     9 ns │     6 ns │    12 ns │    13 ns │
+  │ Rand. Lookup   │     8 ns │    12 ns │     5 ns │     7 ns │    32 ns │
+  │ High Load      │     5 ns │    10 ns │     4 ns │     6 ns │    28 ns │
+  │ Lookup Miss    │     5 ns │    12 ns │     5 ns │     7 ns │    35 ns │
+  │ Tombstone      │     9 ns │    33 ns │    13 ns │    16 ns │    26 ns │
+  │ Delete         │     5 ns │    26 ns │    12 ns │    14 ns │     9 ns │
+  │ Iteration      │     4 ns │     4 ns │     2 ns │     0 ns │     1 ns │
+  │ Churn          │    16 ns │    40 ns │    44 ns │    21 ns │    21 ns │
+  │ Mixed          │    10 ns │    19 ns │    10 ns │    16 ns │    18 ns │
+  │ Read-Heavy     │     5 ns │     6 ns │     5 ns │     9 ns │    13 ns │
+  │ Write-Heavy    │    24 ns │    27 ns │    26 ns │    17 ns │    20 ns │
+  │ Update-Heavy   │     9 ns │    12 ns │     7 ns │    14 ns │    17 ns │
+  │ Zipfian        │     9 ns │    18 ns │    11 ns │    17 ns │    13 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    29 ns │    27 ns │    33 ns │    22 ns │    24 ns │
-  │ Seq. Insert    │    23 ns │    25 ns │    33 ns │    20 ns │    22 ns │
-  │ Reserved Ins.  │     8 ns │    25 ns │    38 ns │    19 ns │     8 ns │
-  │ Update         │     5 ns │     7 ns │     5 ns │     8 ns │     9 ns │
-  │ Rand. Lookup   │     5 ns │     6 ns │     4 ns │     5 ns │     8 ns │
-  │ High Load      │     4 ns │     5 ns │     5 ns │     5 ns │     7 ns │
-  │ Lookup Miss    │     3 ns │     6 ns │     4 ns │     6 ns │     6 ns │
-  │ Tombstone      │     8 ns │    15 ns │     9 ns │    10 ns │     8 ns │
-  │ Delete         │     4 ns │    12 ns │     8 ns │     9 ns │     6 ns │
-  │ Iteration      │     5 ns │    10 ns │     2 ns │     0 ns │     3 ns │
-  │ Churn          │    13 ns │    26 ns │    12 ns │    16 ns │    16 ns │
-  │ Mixed          │     9 ns │    15 ns │    11 ns │    12 ns │    13 ns │
+  │ Rand. Insert   │    29 ns │    21 ns │    26 ns │    23 ns │    30 ns │
+  │ Seq. Insert    │    29 ns │    21 ns │    25 ns │    20 ns │    28 ns │
+  │ Reserved Ins.  │    11 ns │    21 ns │    24 ns │    19 ns │    12 ns │
+  │ Update         │    10 ns │     8 ns │     5 ns │    19 ns │    17 ns │
+  │ Rand. Lookup   │    13 ns │    13 ns │     5 ns │     9 ns │    34 ns │
+  │ High Load      │     7 ns │    14 ns │     5 ns │    10 ns │    28 ns │
+  │ Lookup Miss    │     5 ns │     9 ns │     4 ns │     7 ns │    24 ns │
+  │ Tombstone      │    16 ns │    23 ns │     9 ns │    28 ns │    34 ns │
+  │ Delete         │     7 ns │    20 ns │     8 ns │    16 ns │    13 ns │
+  │ Iteration      │     5 ns │     4 ns │     2 ns │     0 ns │     2 ns │
+  │ Churn          │    18 ns │    39 ns │    14 ns │    26 ns │    52 ns │
+  │ Mixed          │    16 ns │    19 ns │    14 ns │    22 ns │    22 ns │
+  │ Read-Heavy     │     9 ns │     8 ns │     6 ns │    13 ns │    17 ns │
+  │ Write-Heavy    │    42 ns │    32 ns │    28 ns │    31 ns │    37 ns │
+  │ Update-Heavy   │    13 ns │    11 ns │     6 ns │    25 ns │    21 ns │
+  │ Zipfian        │    12 ns │    19 ns │    13 ns │    21 ns │    15 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    60 ns │    24 ns │    30 ns │    49 ns │    48 ns │
-  │ Seq. Insert    │    57 ns │    24 ns │    30 ns │    48 ns │    49 ns │
-  │ Reserved Ins.  │    30 ns │    24 ns │    30 ns │    48 ns │    26 ns │
-  │ Update         │    16 ns │    12 ns │    10 ns │    42 ns │    25 ns │
-  │ Rand. Lookup   │    17 ns │    10 ns │    12 ns │    40 ns │    25 ns │
-  │ High Load      │    18 ns │    11 ns │    13 ns │    37 ns │    26 ns │
-  │ Lookup Miss    │    19 ns │    12 ns │     7 ns │    16 ns │    36 ns │
-  │ Tombstone      │    29 ns │    31 ns │    15 ns │    50 ns │    50 ns │
-  │ Delete         │    13 ns │    26 ns │    12 ns │    38 ns │    19 ns │
+  │ Rand. Insert   │    62 ns │    24 ns │    31 ns │    52 ns │    50 ns │
+  │ Seq. Insert    │    59 ns │    24 ns │    31 ns │    52 ns │    50 ns │
+  │ Reserved Ins.  │    30 ns │    24 ns │    31 ns │    52 ns │    26 ns │
+  │ Update         │    17 ns │    11 ns │     9 ns │    37 ns │    25 ns │
+  │ Rand. Lookup   │    17 ns │    11 ns │    13 ns │    39 ns │    28 ns │
+  │ High Load      │    17 ns │    13 ns │    14 ns │    35 ns │    27 ns │
+  │ Lookup Miss    │    16 ns │    13 ns │     7 ns │    17 ns │    35 ns │
+  │ Tombstone      │    31 ns │    31 ns │    16 ns │    55 ns │    51 ns │
+  │ Delete         │    14 ns │    28 ns │    13 ns │    43 ns │    20 ns │
   │ Iteration      │     4 ns │     4 ns │     2 ns │     0 ns │     5 ns │
-  │ Churn          │    52 ns │    53 ns │    49 ns │    75 ns │    80 ns │
-  │ Mixed          │    30 ns │    24 ns │    22 ns │    54 ns │    43 ns │
+  │ Churn          │    52 ns │    53 ns │    51 ns │    79 ns │    84 ns │
+  │ Mixed          │    33 ns │    31 ns │    24 ns │    62 ns │    47 ns │
+  │ Read-Heavy     │    22 ns │    15 ns │    14 ns │    41 ns │    35 ns │
+  │ Write-Heavy    │    59 ns │    37 ns │    34 ns │    45 ns │    53 ns │
+  │ Update-Heavy   │    17 ns │    10 ns │    10 ns │    26 ns │    21 ns │
+  │ Zipfian        │    13 ns │    11 ns │    10 ns │    28 ns │    14 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ════════════════════════════════════════════════════════════════════════════════
   u32 key → 4B value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    24 ns │    45 ns │    34 ns │    45 ns │    29 ns │
-  │ Seq. Insert    │    16 ns │    29 ns │    25 ns │    35 ns │    25 ns │
-  │ Reserved Ins.  │    12 ns │    27 ns │    26 ns │    35 ns │    15 ns │
-  │ Update         │    10 ns │    16 ns │    13 ns │     9 ns │    17 ns │
-  │ Rand. Lookup   │    15 ns │    11 ns │     8 ns │     9 ns │    18 ns │
-  │ High Load      │     9 ns │    10 ns │     8 ns │     8 ns │    18 ns │
-  │ Lookup Miss    │    10 ns │    11 ns │     8 ns │    10 ns │    12 ns │
-  │ Tombstone      │    12 ns │    28 ns │    21 ns │    16 ns │    15 ns │
-  │ Delete         │     9 ns │    26 ns │    23 ns │    15 ns │    14 ns │
-  │ Iteration      │     8 ns │     8 ns │    10 ns │     4 ns │     6 ns │
-  │ Churn          │    13 ns │    19 ns │    12 ns │    11 ns │    17 ns │
-  │ Mixed          │    16 ns │    21 ns │    16 ns │    18 ns │    32 ns │
+  │ Rand. Insert   │    13 ns │    14 ns │    18 ns │    12 ns │    12 ns │
+  │ Seq. Insert    │    10 ns │    13 ns │    15 ns │    11 ns │    11 ns │
+  │ Reserved Ins.  │     5 ns │    12 ns │    15 ns │    10 ns │     6 ns │
+  │ Update         │     3 ns │     4 ns │     5 ns │     3 ns │     6 ns │
+  │ Rand. Lookup   │     2 ns │     6 ns │     2 ns │     3 ns │    16 ns │
+  │ High Load      │     3 ns │     5 ns │     2 ns │     3 ns │    14 ns │
+  │ Lookup Miss    │     1 ns │     6 ns │     2 ns │     3 ns │    12 ns │
+  │ Tombstone      │     5 ns │    15 ns │     7 ns │     8 ns │    14 ns │
+  │ Delete         │     2 ns │    12 ns │     6 ns │     6 ns │     5 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │     8 ns │    19 ns │    23 ns │    10 ns │    11 ns │
+  │ Mixed          │     5 ns │     9 ns │     5 ns │     7 ns │    10 ns │
+  │ Read-Heavy     │     2 ns │     3 ns │     3 ns │     4 ns │     6 ns │
+  │ Write-Heavy    │    11 ns │    13 ns │    15 ns │     9 ns │    13 ns │
+  │ Update-Heavy   │     5 ns │     6 ns │     7 ns │     6 ns │     9 ns │
+  │ Zipfian        │     4 ns │     8 ns │     5 ns │     8 ns │     5 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    27 ns │    26 ns │    40 ns │    23 ns │    26 ns │
-  │ Seq. Insert    │    25 ns │    25 ns │    39 ns │    22 ns │    25 ns │
-  │ Reserved Ins.  │     8 ns │    25 ns │    40 ns │    22 ns │     8 ns │
-  │ Update         │     7 ns │     8 ns │    10 ns │     5 ns │    10 ns │
-  │ Rand. Lookup   │     4 ns │     6 ns │     5 ns │     6 ns │     9 ns │
-  │ High Load      │     4 ns │     6 ns │     5 ns │     6 ns │     7 ns │
-  │ Lookup Miss    │     3 ns │     6 ns │     4 ns │     6 ns │     7 ns │
-  │ Tombstone      │     8 ns │    16 ns │    11 ns │    12 ns │     9 ns │
-  │ Delete         │     5 ns │    12 ns │     8 ns │    10 ns │     6 ns │
-  │ Iteration      │     5 ns │    10 ns │     3 ns │     0 ns │     2 ns │
-  │ Churn          │    13 ns │    28 ns │    15 ns │    15 ns │    17 ns │
-  │ Mixed          │     9 ns │    17 ns │    14 ns │    14 ns │    14 ns │
+  │ Rand. Insert   │    15 ns │    11 ns │    14 ns │    12 ns │    17 ns │
+  │ Seq. Insert    │    15 ns │    11 ns │    15 ns │    11 ns │    16 ns │
+  │ Reserved Ins.  │     5 ns │    11 ns │    15 ns │    11 ns │     6 ns │
+  │ Update         │     5 ns │     4 ns │     4 ns │     7 ns │    10 ns │
+  │ Rand. Lookup   │     4 ns │     5 ns │     2 ns │     5 ns │    16 ns │
+  │ High Load      │     3 ns │     5 ns │     2 ns │     4 ns │    13 ns │
+  │ Lookup Miss    │     2 ns │     4 ns │     2 ns │     4 ns │    12 ns │
+  │ Tombstone      │     7 ns │    12 ns │     5 ns │    15 ns │    17 ns │
+  │ Delete         │     3 ns │     9 ns │     4 ns │     9 ns │     7 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │     9 ns │    20 ns │     7 ns │    14 ns │    28 ns │
+  │ Mixed          │     8 ns │    10 ns │     7 ns │    11 ns │    12 ns │
+  │ Read-Heavy     │     4 ns │     3 ns │     3 ns │     8 ns │     8 ns │
+  │ Write-Heavy    │    22 ns │    18 ns │    16 ns │    17 ns │    20 ns │
+  │ Update-Heavy   │     7 ns │     6 ns │     7 ns │    11 ns │    12 ns │
+  │ Zipfian        │     6 ns │     9 ns │     6 ns │    12 ns │     8 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    63 ns │    26 ns │    36 ns │    54 ns │    51 ns │
-  │ Seq. Insert    │    58 ns │    26 ns │    35 ns │    52 ns │    50 ns │
-  │ Reserved Ins.  │    30 ns │    26 ns │    35 ns │    52 ns │    29 ns │
-  │ Update         │    19 ns │    13 ns │    19 ns │    27 ns │    27 ns │
-  │ Rand. Lookup   │    17 ns │    12 ns │    13 ns │    33 ns │    25 ns │
-  │ High Load      │    18 ns │    13 ns │    14 ns │    32 ns │    26 ns │
-  │ Lookup Miss    │    17 ns │    12 ns │     7 ns │    16 ns │    35 ns │
-  │ Tombstone      │    31 ns │    32 ns │    16 ns │    49 ns │    50 ns │
-  │ Delete         │    12 ns │    21 ns │     9 ns │    27 ns │    16 ns │
-  │ Iteration      │     3 ns │     2 ns │     1 ns │     0 ns │     3 ns │
-  │ Churn          │    33 ns │    31 ns │    29 ns │    41 ns │    49 ns │
-  │ Mixed          │    18 ns │    14 ns │    12 ns │    26 ns │    21 ns │
+  │ Rand. Insert   │    33 ns │    14 ns │    18 ns │    26 ns │    25 ns │
+  │ Seq. Insert    │    30 ns │    14 ns │    19 ns │    28 ns │    26 ns │
+  │ Reserved Ins.  │    15 ns │    14 ns │    18 ns │    26 ns │    14 ns │
+  │ Update         │     9 ns │     6 ns │    10 ns │    14 ns │    14 ns │
+  │ Rand. Lookup   │     8 ns │     6 ns │     7 ns │    18 ns │    13 ns │
+  │ High Load      │     8 ns │     7 ns │     7 ns │    17 ns │    13 ns │
+  │ Lookup Miss    │     8 ns │     6 ns │     4 ns │     8 ns │    18 ns │
+  │ Tombstone      │    16 ns │    17 ns │     8 ns │    26 ns │    27 ns │
+  │ Delete         │     6 ns │    13 ns │     6 ns │    20 ns │    10 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
+  │ Churn          │    28 ns │    27 ns │    28 ns │    40 ns │    43 ns │
+  │ Mixed          │    16 ns │    14 ns │    13 ns │    28 ns │    22 ns │
+  │ Read-Heavy     │    10 ns │     7 ns │     8 ns │    28 ns │    15 ns │
+  │ Write-Heavy    │    85 ns │    53 ns │    28 ns │    37 ns │    72 ns │
+  │ Update-Heavy   │    16 ns │    11 ns │    14 ns │    27 ns │    19 ns │
+  │ Zipfian        │    14 ns │    12 ns │    10 ns │    26 ns │    14 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ════════════════════════════════════════════════════════════════════════════════
   u32 key → 64B value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    25 ns │    28 ns │    23 ns │    31 ns │    23 ns │
-  │ Seq. Insert    │    14 ns │    20 ns │    18 ns │    24 ns │    18 ns │
-  │ Reserved Ins.  │    12 ns │    22 ns │    20 ns │    26 ns │    13 ns │
-  │ Update         │    14 ns │    17 ns │    17 ns │    16 ns │    15 ns │
-  │ Rand. Lookup   │     7 ns │     6 ns │     4 ns │     5 ns │    10 ns │
-  │ High Load      │     4 ns │     5 ns │     4 ns │     4 ns │     8 ns │
-  │ Lookup Miss    │     4 ns │     5 ns │     4 ns │     5 ns │     6 ns │
-  │ Tombstone      │    10 ns │    15 ns │    14 ns │    13 ns │    13 ns │
-  │ Delete         │    72 ns │    12 ns │    11 ns │     7 ns │     8 ns │
-  │ Iteration      │     4 ns │     4 ns │     4 ns │     2 ns │     3 ns │
-  │ Churn          │     9 ns │    12 ns │    11 ns │    12 ns │    11 ns │
-  │ Mixed          │     9 ns │    10 ns │     8 ns │     9 ns │    13 ns │
+  │ Rand. Insert   │    20 ns │    26 ns │    25 ns │    21 ns │    18 ns │
+  │ Seq. Insert    │    17 ns │    18 ns │    21 ns │    17 ns │    17 ns │
+  │ Reserved Ins.  │    12 ns │    21 ns │    23 ns │    19 ns │    12 ns │
+  │ Update         │    15 ns │    17 ns │    16 ns │    15 ns │    14 ns │
+  │ Rand. Lookup   │    11 ns │     6 ns │     2 ns │     3 ns │    16 ns │
+  │ High Load      │     3 ns │     5 ns │     2 ns │     3 ns │    13 ns │
+  │ Lookup Miss    │     1 ns │     5 ns │     2 ns │     3 ns │    13 ns │
+  │ Tombstone      │     9 ns │    18 ns │    10 ns │    12 ns │    15 ns │
+  │ Delete         │     3 ns │    13 ns │     6 ns │     6 ns │     4 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    11 ns │    22 ns │    30 ns │    14 ns │    19 ns │
+  │ Mixed          │     6 ns │    11 ns │     7 ns │     7 ns │    10 ns │
+  │ Read-Heavy     │     2 ns │     4 ns │     3 ns │     4 ns │     6 ns │
+  │ Write-Heavy    │    16 ns │    19 ns │    23 ns │    15 ns │    15 ns │
+  │ Update-Heavy   │    13 ns │    21 ns │    17 ns │    16 ns │    18 ns │
+  │ Zipfian        │     5 ns │    10 ns │     7 ns │     8 ns │    10 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    22 ns │    22 ns │    32 ns │    21 ns │    21 ns │
-  │ Seq. Insert    │    18 ns │    22 ns │    29 ns │    18 ns │    18 ns │
-  │ Reserved Ins.  │    11 ns │    21 ns │    30 ns │    19 ns │    10 ns │
-  │ Update         │    14 ns │    17 ns │    18 ns │    14 ns │    13 ns │
-  │ Rand. Lookup   │     3 ns │     4 ns │     3 ns │     3 ns │     4 ns │
-  │ High Load      │     4 ns │     4 ns │     3 ns │     3 ns │     4 ns │
-  │ Lookup Miss    │     1 ns │     3 ns │     2 ns │     3 ns │     3 ns │
-  │ Tombstone      │     7 ns │    11 ns │     9 ns │    11 ns │     7 ns │
-  │ Delete         │     4 ns │     6 ns │     5 ns │     6 ns │     3 ns │
-  │ Iteration      │     2 ns │     5 ns │     1 ns │     0 ns │     1 ns │
-  │ Churn          │     9 ns │    16 ns │    10 ns │    11 ns │    10 ns │
-  │ Mixed          │     5 ns │     9 ns │     8 ns │     8 ns │     8 ns │
+  │ Rand. Insert   │    24 ns │    30 ns │    27 ns │    22 ns │    24 ns │
+  │ Seq. Insert    │    25 ns │    20 ns │    27 ns │    19 ns │    22 ns │
+  │ Reserved Ins.  │    13 ns │    28 ns │    27 ns │    20 ns │    12 ns │
+  │ Update         │    15 ns │    17 ns │    17 ns │    16 ns │    15 ns │
+  │ Rand. Lookup   │    14 ns │     8 ns │     4 ns │     6 ns │    19 ns │
+  │ High Load      │     4 ns │     6 ns │     3 ns │     5 ns │    15 ns │
+  │ Lookup Miss    │     3 ns │     4 ns │     2 ns │     4 ns │    12 ns │
+  │ Tombstone      │    11 ns │    14 ns │    10 ns │    18 ns │    18 ns │
+  │ Delete         │     4 ns │    10 ns │     4 ns │     8 ns │     7 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    13 ns │    22 ns │    12 ns │    18 ns │    29 ns │
+  │ Mixed          │    10 ns │    11 ns │     9 ns │    12 ns │    13 ns │
+  │ Read-Heavy     │     5 ns │     5 ns │     4 ns │     9 ns │     9 ns │
+  │ Write-Heavy    │    39 ns │    23 ns │    27 ns │    26 ns │    26 ns │
+  │ Update-Heavy   │    18 ns │    21 ns │    18 ns │    17 ns │    18 ns │
+  │ Zipfian        │     7 ns │    11 ns │     9 ns │    13 ns │    10 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │   119 ns │    58 ns │    52 ns │    37 ns │    55 ns │
-  │ Seq. Insert    │   105 ns │    57 ns │    55 ns │    38 ns │    56 ns │
-  │ Reserved Ins.  │    50 ns │    84 ns │    92 ns │    39 ns │    37 ns │
-  │ Update         │    66 ns │    68 ns │    46 ns │    28 ns │    36 ns │
-  │ Rand. Lookup   │    12 ns │    12 ns │    13 ns │    20 ns │    13 ns │
-  │ High Load      │    11 ns │    13 ns │    12 ns │    21 ns │    13 ns │
-  │ Lookup Miss    │     9 ns │     7 ns │     3 ns │     8 ns │    18 ns │
-  │ Tombstone      │    20 ns │    23 ns │    20 ns │    28 ns │    31 ns │
-  │ Delete         │    10 ns │    24 ns │    11 ns │    19 ns │    10 ns │
+  │ Rand. Insert   │   122 ns │    45 ns │    53 ns │    37 ns │    53 ns │
+  │ Seq. Insert    │    96 ns │    50 ns │    51 ns │    37 ns │    55 ns │
+  │ Reserved Ins.  │    37 ns │    46 ns │    56 ns │    37 ns │    24 ns │
+  │ Update         │    35 ns │    63 ns │    49 ns │    27 ns │    32 ns │
+  │ Rand. Lookup   │    16 ns │    23 ns │    24 ns │    29 ns │    15 ns │
+  │ High Load      │    14 ns │    13 ns │    13 ns │    22 ns │    14 ns │
+  │ Lookup Miss    │     8 ns │     6 ns │     4 ns │     8 ns │    17 ns │
+  │ Tombstone      │    28 ns │    48 ns │    36 ns │    33 ns │    41 ns │
+  │ Delete         │    15 ns │    23 ns │    15 ns │    20 ns │    10 ns │
   │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │    33 ns │    30 ns │    33 ns │    40 ns │    47 ns │
-  │ Mixed          │    21 ns │    21 ns │    21 ns │    32 ns │    27 ns │
+  │ Churn          │    38 ns │    41 ns │    44 ns │    50 ns │    51 ns │
+  │ Mixed          │    30 ns │    34 ns │    35 ns │    46 ns │    30 ns │
+  │ Read-Heavy     │    20 ns │    20 ns │    18 ns │    32 ns │    17 ns │
+  │ Write-Heavy    │   112 ns │   101 ns │   102 ns │    91 ns │    84 ns │
+  │ Update-Heavy   │    64 ns │    54 ns │    65 ns │    69 ns │    51 ns │
+  │ Zipfian        │    31 ns │    29 ns │    19 ns │    32 ns │    30 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                           u64 Integer Keys                                   ║
+║                           u64 Integer Keys                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 ════════════════════════════════════════════════════════════════════════════════
   u64 key → void (set) value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    12 ns │    27 ns │    15 ns │    23 ns │    13 ns │
-  │ Seq. Insert    │     8 ns │    15 ns │    12 ns │    19 ns │    12 ns │
-  │ Reserved Ins.  │     7 ns │    15 ns │    13 ns │    19 ns │     6 ns │
-  │ Update         │     5 ns │     7 ns │     5 ns │     6 ns │     6 ns │
-  │ Rand. Lookup   │     5 ns │     7 ns │     4 ns │     4 ns │     7 ns │
-  │ High Load      │     4 ns │     5 ns │     3 ns │     4 ns │     7 ns │
-  │ Lookup Miss    │     4 ns │     5 ns │     4 ns │     4 ns │     7 ns │
-  │ Tombstone      │     6 ns │    15 ns │    10 ns │     7 ns │    10 ns │
-  │ Delete         │     5 ns │    13 ns │    10 ns │     7 ns │     6 ns │
-  │ Iteration      │     4 ns │     4 ns │     5 ns │     2 ns │     3 ns │
-  │ Churn          │     7 ns │     9 ns │     8 ns │     7 ns │     9 ns │
-  │ Mixed          │    56 ns │     9 ns │     8 ns │     8 ns │    11 ns │
+  │ Rand. Insert   │    19 ns │    15 ns │    16 ns │    12 ns │     9 ns │
+  │ Seq. Insert    │     7 ns │    12 ns │    12 ns │    10 ns │     9 ns │
+  │ Reserved Ins.  │     5 ns │    13 ns │    14 ns │    11 ns │     4 ns │
+  │ Update         │     3 ns │     4 ns │     3 ns │     5 ns │     4 ns │
+  │ Rand. Lookup   │     2 ns │     6 ns │     2 ns │     2 ns │     7 ns │
+  │ High Load      │     2 ns │     4 ns │     2 ns │     3 ns │     6 ns │
+  │ Lookup Miss    │     2 ns │     6 ns │     2 ns │     3 ns │     5 ns │
+  │ Tombstone      │     4 ns │    16 ns │     6 ns │     6 ns │     9 ns │
+  │ Delete         │     2 ns │    12 ns │     6 ns │     6 ns │     3 ns │
+  │ Iteration      │     2 ns │     1 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │     9 ns │    19 ns │    16 ns │    11 ns │    10 ns │
+  │ Mixed          │     4 ns │     9 ns │     5 ns │     7 ns │     6 ns │
+  │ Read-Heavy     │     2 ns │     3 ns │     3 ns │     3 ns │     4 ns │
+  │ Write-Heavy    │    11 ns │    15 ns │    15 ns │    12 ns │     8 ns │
+  │ Update-Heavy   │     4 ns │     5 ns │     3 ns │     9 ns │     7 ns │
+  │ Zipfian        │     4 ns │     9 ns │     5 ns │     7 ns │     5 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    14 ns │    13 ns │    19 ns │    15 ns │    13 ns │
-  │ Seq. Insert    │    11 ns │    11 ns │    17 ns │    11 ns │    11 ns │
-  │ Reserved Ins.  │     4 ns │    13 ns │    19 ns │    14 ns │     4 ns │
-  │ Update         │     3 ns │     3 ns │     3 ns │     4 ns │     4 ns │
-  │ Rand. Lookup   │     2 ns │     3 ns │     2 ns │     3 ns │     4 ns │
-  │ High Load      │     1 ns │     3 ns │     2 ns │     3 ns │     3 ns │
-  │ Lookup Miss    │     1 ns │     2 ns │     2 ns │     3 ns │     3 ns │
-  │ Tombstone      │     3 ns │     8 ns │     5 ns │     5 ns │     3 ns │
-  │ Delete         │     2 ns │     6 ns │     4 ns │     5 ns │     2 ns │
-  │ Iteration      │     2 ns │     5 ns │     1 ns │     0 ns │     1 ns │
-  │ Churn          │     7 ns │    13 ns │     6 ns │     8 ns │     8 ns │
-  │ Mixed          │     5 ns │     9 ns │    10 ns │    11 ns │     6 ns │
+  │ Rand. Insert   │    13 ns │    11 ns │    15 ns │    14 ns │    15 ns │
+  │ Seq. Insert    │    13 ns │    10 ns │    13 ns │     9 ns │    13 ns │
+  │ Reserved Ins.  │     5 ns │    11 ns │    15 ns │    13 ns │     6 ns │
+  │ Update         │     4 ns │     4 ns │     3 ns │     9 ns │     9 ns │
+  │ Rand. Lookup   │     4 ns │     5 ns │     3 ns │     5 ns │    17 ns │
+  │ High Load      │     3 ns │     5 ns │     3 ns │     4 ns │    14 ns │
+  │ Lookup Miss    │     3 ns │     4 ns │     2 ns │     4 ns │    12 ns │
+  │ Tombstone      │     8 ns │    12 ns │     5 ns │    11 ns │    15 ns │
+  │ Delete         │     3 ns │    10 ns │     4 ns │     9 ns │     7 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │     9 ns │    20 ns │     7 ns │    14 ns │    25 ns │
+  │ Mixed          │     7 ns │    10 ns │     7 ns │    11 ns │    11 ns │
+  │ Read-Heavy     │     5 ns │     3 ns │     3 ns │     7 ns │     8 ns │
+  │ Write-Heavy    │    22 ns │    18 ns │    17 ns │    19 ns │    19 ns │
+  │ Update-Heavy   │     7 ns │     5 ns │     4 ns │    14 ns │    11 ns │
+  │ Zipfian        │     7 ns │    10 ns │     7 ns │    12 ns │     9 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    32 ns │    14 ns │    17 ns │    28 ns │    26 ns │
-  │ Seq. Insert    │    27 ns │    12 ns │    14 ns │    10 ns │    23 ns │
-  │ Reserved Ins.  │    15 ns │    13 ns │    17 ns │    27 ns │    12 ns │
-  │ Update         │     8 ns │     6 ns │     5 ns │    16 ns │    12 ns │
-  │ Rand. Lookup   │     8 ns │     5 ns │     6 ns │    17 ns │    13 ns │
-  │ High Load      │     9 ns │     6 ns │     6 ns │    17 ns │    13 ns │
-  │ Lookup Miss    │    10 ns │     6 ns │     3 ns │     7 ns │    17 ns │
-  │ Tombstone      │    15 ns │    16 ns │     7 ns │    24 ns │    24 ns │
-  │ Delete         │     7 ns │    13 ns │     6 ns │    19 ns │     9 ns │
+  │ Rand. Insert   │    33 ns │    13 ns │    17 ns │    29 ns │    24 ns │
+  │ Seq. Insert    │    30 ns │    12 ns │    13 ns │    10 ns │    23 ns │
+  │ Reserved Ins.  │    15 ns │    13 ns │    17 ns │    28 ns │    13 ns │
+  │ Update         │     8 ns │     6 ns │     5 ns │    17 ns │    12 ns │
+  │ Rand. Lookup   │     8 ns │     5 ns │     6 ns │    18 ns │    13 ns │
+  │ High Load      │     8 ns │     6 ns │     6 ns │    17 ns │    13 ns │
+  │ Lookup Miss    │     8 ns │     6 ns │     3 ns │     8 ns │    16 ns │
+  │ Tombstone      │    15 ns │    17 ns │     7 ns │    25 ns │    24 ns │
+  │ Delete         │     7 ns │    14 ns │     6 ns │    19 ns │    10 ns │
   │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │    28 ns │    27 ns │    26 ns │    39 ns │    43 ns │
-  │ Mixed          │    17 ns │    13 ns │    11 ns │    28 ns │    21 ns │
+  │ Churn          │    28 ns │    28 ns │    25 ns │    38 ns │    42 ns │
+  │ Mixed          │    19 ns │    13 ns │    11 ns │    28 ns │    23 ns │
+  │ Read-Heavy     │    13 ns │     7 ns │     7 ns │    22 ns │    14 ns │
+  │ Write-Heavy    │    44 ns │    28 ns │    26 ns │    36 ns │    32 ns │
+  │ Update-Heavy   │    18 ns │    10 ns │     9 ns │    25 ns │    18 ns │
+  │ Zipfian        │    13 ns │    12 ns │    10 ns │    29 ns │    15 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ════════════════════════════════════════════════════════════════════════════════
   u64 key → 4B value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    15 ns │    33 ns │    18 ns │    26 ns │    14 ns │
-  │ Seq. Insert    │     8 ns │    14 ns │    11 ns │    21 ns │    13 ns │
-  │ Reserved Ins.  │     7 ns │    14 ns │    12 ns │    21 ns │     6 ns │
-  │ Update         │     5 ns │     8 ns │     8 ns │     5 ns │     6 ns │
-  │ Rand. Lookup   │     5 ns │     6 ns │     4 ns │     4 ns │     7 ns │
-  │ High Load      │     4 ns │     5 ns │     4 ns │     4 ns │     6 ns │
-  │ Lookup Miss    │     4 ns │     6 ns │     4 ns │     4 ns │     7 ns │
-  │ Tombstone      │     6 ns │    15 ns │    10 ns │     8 ns │     9 ns │
-  │ Delete         │     5 ns │    13 ns │    10 ns │     7 ns │     6 ns │
-  │ Iteration      │     4 ns │     4 ns │     4 ns │     2 ns │     3 ns │
-  │ Churn          │     7 ns │    10 ns │     9 ns │     6 ns │     9 ns │
-  │ Mixed          │     8 ns │    11 ns │     8 ns │     9 ns │    13 ns │
+  │ Rand. Insert   │    15 ns │    14 ns │    16 ns │    14 ns │    10 ns │
+  │ Seq. Insert    │     9 ns │    12 ns │    15 ns │    12 ns │     9 ns │
+  │ Reserved Ins.  │     5 ns │    13 ns │    15 ns │    12 ns │     5 ns │
+  │ Update         │     3 ns │     4 ns │     6 ns │     3 ns │     5 ns │
+  │ Rand. Lookup   │     2 ns │     6 ns │     2 ns │     3 ns │     7 ns │
+  │ High Load      │     3 ns │     5 ns │     2 ns │     3 ns │     7 ns │
+  │ Lookup Miss    │     2 ns │     6 ns │     2 ns │     3 ns │     5 ns │
+  │ Tombstone      │     5 ns │    16 ns │     7 ns │     7 ns │    10 ns │
+  │ Delete         │     2 ns │    13 ns │     6 ns │     6 ns │     3 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     0 ns │
+  │ Churn          │     9 ns │    21 ns │    18 ns │    10 ns │    11 ns │
+  │ Mixed          │     5 ns │    11 ns │     6 ns │     7 ns │     6 ns │
+  │ Read-Heavy     │     2 ns │     4 ns │     3 ns │     4 ns │     4 ns │
+  │ Write-Heavy    │    13 ns │    15 ns │    18 ns │    12 ns │     9 ns │
+  │ Update-Heavy   │     5 ns │     8 ns │     8 ns │     9 ns │     8 ns │
+  │ Zipfian        │     5 ns │    10 ns │     6 ns │     6 ns │     5 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    14 ns │    13 ns │    21 ns │    16 ns │    13 ns │
-  │ Seq. Insert    │    12 ns │    12 ns │    20 ns │    13 ns │    10 ns │
-  │ Reserved Ins.  │     4 ns │    14 ns │    21 ns │    14 ns │     4 ns │
-  │ Update         │     3 ns │     4 ns │     6 ns │     3 ns │     4 ns │
-  │ Rand. Lookup   │     2 ns │     3 ns │     2 ns │     3 ns │     4 ns │
-  │ High Load      │     2 ns │     3 ns │     2 ns │     3 ns │     3 ns │
-  │ Lookup Miss    │     1 ns │     3 ns │     2 ns │     3 ns │     3 ns │
-  │ Tombstone      │     3 ns │     7 ns │     6 ns │     5 ns │     4 ns │
-  │ Delete         │     2 ns │     6 ns │     4 ns │     4 ns │     2 ns │
-  │ Iteration      │     2 ns │     5 ns │     1 ns │     0 ns │     1 ns │
-  │ Churn          │     7 ns │    13 ns │     8 ns │     8 ns │     8 ns │
-  │ Mixed          │     5 ns │     8 ns │     7 ns │     7 ns │     6 ns │
+  │ Rand. Insert   │    14 ns │    11 ns │    17 ns │    15 ns │    17 ns │
+  │ Seq. Insert    │    14 ns │     9 ns │    17 ns │    10 ns │    15 ns │
+  │ Reserved Ins.  │     5 ns │    11 ns │    17 ns │    15 ns │     6 ns │
+  │ Update         │     5 ns │     4 ns │     7 ns │     7 ns │    10 ns │
+  │ Rand. Lookup   │     5 ns │     6 ns │     3 ns │     7 ns │    16 ns │
+  │ High Load      │     3 ns │     6 ns │     3 ns │     4 ns │    16 ns │
+  │ Lookup Miss    │     2 ns │     4 ns │     2 ns │     4 ns │    12 ns │
+  │ Tombstone      │     9 ns │    12 ns │     7 ns │    13 ns │    18 ns │
+  │ Delete         │     4 ns │    10 ns │     4 ns │     8 ns │     6 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    10 ns │    21 ns │     8 ns │    14 ns │    25 ns │
+  │ Mixed          │     8 ns │    10 ns │     8 ns │    12 ns │    12 ns │
+  │ Read-Heavy     │     5 ns │     4 ns │     4 ns │     7 ns │     9 ns │
+  │ Write-Heavy    │    25 ns │    21 ns │    22 ns │    19 ns │    20 ns │
+  │ Update-Heavy   │     8 ns │     7 ns │     9 ns │    11 ns │    12 ns │
+  │ Zipfian        │     7 ns │    10 ns │     7 ns │    12 ns │     9 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    35 ns │    14 ns │    20 ns │    31 ns │    26 ns │
-  │ Seq. Insert    │    29 ns │    13 ns │    19 ns │    12 ns │    24 ns │
-  │ Reserved Ins.  │    15 ns │    15 ns │    20 ns │    29 ns │    14 ns │
-  │ Update         │    10 ns │     6 ns │    10 ns │    14 ns │    13 ns │
-  │ Rand. Lookup   │    10 ns │     7 ns │     7 ns │    18 ns │    12 ns │
-  │ High Load      │    11 ns │     7 ns │     8 ns │    17 ns │    13 ns │
-  │ Lookup Miss    │     9 ns │     6 ns │     3 ns │     8 ns │    17 ns │
-  │ Tombstone      │    17 ns │    16 ns │     9 ns │    26 ns │    25 ns │
-  │ Delete         │     7 ns │    14 ns │     6 ns │    19 ns │    10 ns │
+  │ Rand. Insert   │    32 ns │    14 ns │    21 ns │    30 ns │    27 ns │
+  │ Seq. Insert    │    32 ns │    12 ns │    17 ns │    13 ns │    25 ns │
+  │ Reserved Ins.  │    16 ns │    15 ns │    20 ns │    29 ns │    15 ns │
+  │ Update         │    10 ns │     6 ns │    10 ns │    14 ns │    14 ns │
+  │ Rand. Lookup   │     9 ns │     6 ns │     7 ns │    17 ns │    13 ns │
+  │ High Load      │    12 ns │     7 ns │     8 ns │    17 ns │    12 ns │
+  │ Lookup Miss    │     8 ns │     6 ns │     4 ns │     9 ns │    16 ns │
+  │ Tombstone      │    18 ns │    16 ns │     9 ns │    27 ns │    26 ns │
+  │ Delete         │     7 ns │    13 ns │     7 ns │    19 ns │     9 ns │
   │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │    30 ns │    28 ns │    32 ns │    39 ns │    44 ns │
-  │ Mixed          │    18 ns │    15 ns │    13 ns │    28 ns │    22 ns │
+  │ Churn          │    37 ns │    28 ns │    28 ns │    39 ns │    49 ns │
+  │ Mixed          │    23 ns │    20 ns │    19 ns │    31 ns │    33 ns │
+  │ Read-Heavy     │    15 ns │     8 ns │     9 ns │    21 ns │    16 ns │
+  │ Write-Heavy    │    53 ns │    31 ns │    32 ns │    37 ns │    34 ns │
+  │ Update-Heavy   │    17 ns │    12 ns │    16 ns │    24 ns │    21 ns │
+  │ Zipfian        │    15 ns │    12 ns │    12 ns │    28 ns │    15 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ════════════════════════════════════════════════════════════════════════════════
   u64 key → 64B value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    22 ns │    25 ns │    17 ns │    36 ns │    19 ns │
-  │ Seq. Insert    │    13 ns │    19 ns │    16 ns │    31 ns │    17 ns │
-  │ Reserved Ins.  │     9 ns │    18 ns │    14 ns │    29 ns │     8 ns │
-  │ Update         │     9 ns │     9 ns │     9 ns │    15 ns │     9 ns │
-  │ Rand. Lookup   │     4 ns │     7 ns │     4 ns │     5 ns │     7 ns │
-  │ High Load      │     4 ns │     6 ns │     4 ns │     4 ns │     7 ns │
-  │ Lookup Miss    │     4 ns │     5 ns │     4 ns │     4 ns │     7 ns │
-  │ Tombstone      │    10 ns │    13 ns │    11 ns │    12 ns │     9 ns │
-  │ Delete         │     5 ns │    12 ns │    10 ns │     6 ns │     7 ns │
-  │ Iteration      │     4 ns │     4 ns │     5 ns │     2 ns │     3 ns │
-  │ Churn          │    11 ns │    12 ns │    11 ns │    12 ns │    10 ns │
-  │ Mixed          │     9 ns │    13 ns │     9 ns │     8 ns │    11 ns │
+  │ Rand. Insert   │    17 ns │    17 ns │    20 ns │    17 ns │    13 ns │
+  │ Seq. Insert    │    12 ns │    16 ns │    20 ns │    18 ns │    15 ns │
+  │ Reserved Ins.  │     8 ns │    15 ns │    19 ns │    16 ns │     7 ns │
+  │ Update         │     6 ns │     7 ns │     8 ns │     6 ns │     7 ns │
+  │ Rand. Lookup   │     5 ns │     6 ns │     2 ns │     3 ns │     7 ns │
+  │ High Load      │     3 ns │     6 ns │     2 ns │     3 ns │     6 ns │
+  │ Lookup Miss    │     2 ns │     5 ns │     2 ns │     3 ns │     5 ns │
+  │ Tombstone      │     6 ns │    22 ns │     8 ns │     9 ns │    10 ns │
+  │ Delete         │     2 ns │    13 ns │     6 ns │     6 ns │     3 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    10 ns │    24 ns │    22 ns │    13 ns │    13 ns │
+  │ Mixed          │     5 ns │    11 ns │     5 ns │     7 ns │     6 ns │
+  │ Read-Heavy     │     2 ns │     3 ns │     3 ns │     3 ns │     4 ns │
+  │ Write-Heavy    │    14 ns │    17 ns │    19 ns │    15 ns │    11 ns │
+  │ Update-Heavy   │     7 ns │     8 ns │     9 ns │    13 ns │    13 ns │
+  │ Zipfian        │     4 ns │     9 ns │     5 ns │     6 ns │     5 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    22 ns │    17 ns │    27 ns │    20 ns │    19 ns │
-  │ Seq. Insert    │    20 ns │    22 ns │    27 ns │    19 ns │    19 ns │
-  │ Reserved Ins.  │     6 ns │    17 ns │    29 ns │    18 ns │     6 ns │
-  │ Update         │     7 ns │     7 ns │     8 ns │     6 ns │     7 ns │
-  │ Rand. Lookup   │     3 ns │     4 ns │     3 ns │     3 ns │     6 ns │
-  │ High Load      │     2 ns │     4 ns │     3 ns │     3 ns │     5 ns │
-  │ Lookup Miss    │     1 ns │     3 ns │     3 ns │     3 ns │     3 ns │
-  │ Tombstone      │     6 ns │     9 ns │     7 ns │     7 ns │     6 ns │
-  │ Delete         │     3 ns │     6 ns │     4 ns │     5 ns │     3 ns │
-  │ Iteration      │     2 ns │     5 ns │     1 ns │     0 ns │     1 ns │
-  │ Churn          │     9 ns │    17 ns │     9 ns │    10 ns │    11 ns │
-  │ Mixed          │     6 ns │     9 ns │     8 ns │     6 ns │     7 ns │
+  │ Rand. Insert   │    18 ns │    14 ns │    24 ns │    19 ns │    19 ns │
+  │ Seq. Insert    │    20 ns │    20 ns │    24 ns │    19 ns │    21 ns │
+  │ Reserved Ins.  │     8 ns │    15 ns │    23 ns │    20 ns │     9 ns │
+  │ Update         │    10 ns │     7 ns │     8 ns │    11 ns │    15 ns │
+  │ Rand. Lookup   │     5 ns │     8 ns │     4 ns │     7 ns │    21 ns │
+  │ High Load      │     4 ns │     7 ns │     5 ns │     5 ns │    17 ns │
+  │ Lookup Miss    │     2 ns │     5 ns │     2 ns │     4 ns │    12 ns │
+  │ Tombstone      │    11 ns │    13 ns │     7 ns │    14 ns │    17 ns │
+  │ Delete         │     4 ns │    11 ns │     4 ns │     9 ns │     6 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    12 ns │    23 ns │    10 ns │    17 ns │    27 ns │
+  │ Mixed          │     9 ns │    10 ns │     9 ns │    15 ns │    13 ns │
+  │ Read-Heavy     │     5 ns │     5 ns │     4 ns │     8 ns │     9 ns │
+  │ Write-Heavy    │    36 ns │    24 ns │    28 ns │    29 ns │    25 ns │
+  │ Update-Heavy   │    12 ns │    10 ns │    12 ns │    15 ns │    15 ns │
+  │ Zipfian        │     8 ns │    10 ns │    10 ns │    11 ns │    10 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │   110 ns │    54 ns │    57 ns │    40 ns │    58 ns │
-  │ Seq. Insert    │   107 ns │    63 ns │    59 ns │    27 ns │    58 ns │
-  │ Reserved Ins.  │    38 ns │    52 ns │    58 ns │    41 ns │    17 ns │
-  │ Update         │    19 ns │    16 ns │    18 ns │    19 ns │    21 ns │
-  │ Rand. Lookup   │    12 ns │    14 ns │    13 ns │    23 ns │    13 ns │
-  │ High Load      │    13 ns │    13 ns │    14 ns │    22 ns │    14 ns │
-  │ Lookup Miss    │     9 ns │     7 ns │     4 ns │     8 ns │    17 ns │
-  │ Tombstone      │    21 ns │    24 ns │    16 ns │    28 ns │    27 ns │
-  │ Delete         │    10 ns │    20 ns │    12 ns │    19 ns │     9 ns │
+  │ Rand. Insert   │    65 ns │    37 ns │    46 ns │    40 ns │    41 ns │
+  │ Seq. Insert    │    69 ns │    51 ns │    54 ns │    25 ns │    50 ns │
+  │ Reserved Ins.  │    28 ns │    38 ns │    45 ns │    38 ns │    20 ns │
+  │ Update         │    24 ns │    17 ns │    22 ns │    19 ns │    20 ns │
+  │ Rand. Lookup   │    13 ns │    16 ns │    16 ns │    23 ns │    14 ns │
+  │ High Load      │    15 ns │    17 ns │    18 ns │    23 ns │    14 ns │
+  │ Lookup Miss    │     9 ns │     8 ns │     4 ns │     8 ns │    17 ns │
+  │ Tombstone      │    21 ns │    24 ns │    20 ns │    27 ns │    27 ns │
+  │ Delete         │    11 ns │    20 ns │    14 ns │    19 ns │    10 ns │
   │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │    32 ns │    30 ns │    32 ns │    41 ns │    47 ns │
-  │ Mixed          │    21 ns │    22 ns │    21 ns │    33 ns │    27 ns │
+  │ Churn          │    35 ns │    32 ns │    37 ns │    41 ns │    48 ns │
+  │ Mixed          │    24 ns │    24 ns │    26 ns │    37 ns │    31 ns │
+  │ Read-Heavy     │    18 ns │    20 ns │    19 ns │    28 ns │    18 ns │
+  │ Write-Heavy    │   143 ns │    82 ns │    87 ns │    74 ns │    93 ns │
+  │ Update-Heavy   │    39 ns │    25 ns │    34 ns │    39 ns │    31 ns │
+  │ Zipfian        │    19 ns │    19 ns │    17 ns │    31 ns │    20 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                    String Keys (Random Length 8-64 chars)                    ║
+║                    String Keys (Random Length 8-64 chars)                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 ════════════════════════════════════════════════════════════════════════════════
   string key → void (set) value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    59 ns │    49 ns │    26 ns │    52 ns │    43 ns │
-  │ Seq. Insert    │    22 ns │    27 ns │    17 ns │    42 ns │    31 ns │
-  │ Reserved Ins.  │    18 ns │    28 ns │    17 ns │    42 ns │    14 ns │
-  │ Update         │    18 ns │    41 ns │    35 ns │    43 ns │    17 ns │
-  │ Rand. Lookup   │    30 ns │    18 ns │    13 ns │    19 ns │    16 ns │
-  │ High Load      │    14 ns │    13 ns │     7 ns │     9 ns │    14 ns │
-  │ Lookup Miss    │    47 ns │     9 ns │     8 ns │    10 ns │    11 ns │
-  │ Tombstone      │    12 ns │    23 ns │    16 ns │    26 ns │    12 ns │
-  │ Delete         │    10 ns │    26 ns │    22 ns │    27 ns │    10 ns │
-  │ Iteration      │     4 ns │     4 ns │     5 ns │     2 ns │     4 ns │
-  │ Churn          │    14 ns │    22 ns │    20 ns │    25 ns │    15 ns │
-  │ Mixed          │    16 ns │    43 ns │    42 ns │    40 ns │    16 ns │
+  │ Rand. Insert   │    29 ns │    26 ns │    17 ns │    26 ns │    24 ns │
+  │ Seq. Insert    │    20 ns │    23 ns │    17 ns │    24 ns │    20 ns │
+  │ Reserved Ins.  │    11 ns │    23 ns │    17 ns │    23 ns │     8 ns │
+  │ Update         │     9 ns │    24 ns │    23 ns │    30 ns │    10 ns │
+  │ Rand. Lookup   │    18 ns │    13 ns │     8 ns │    10 ns │    15 ns │
+  │ High Load      │     8 ns │    11 ns │     7 ns │     9 ns │    14 ns │
+  │ Lookup Miss    │     7 ns │    10 ns │     5 ns │     8 ns │    13 ns │
+  │ Tombstone      │    11 ns │    31 ns │    17 ns │    27 ns │    16 ns │
+  │ Delete         │     9 ns │    34 ns │    24 ns │    30 ns │    10 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     0 ns │
+  │ Churn          │    16 ns │    37 ns │    26 ns │    31 ns │    22 ns │
+  │ Mixed          │    10 ns │    37 ns │    33 ns │    35 ns │    12 ns │
+  │ Read-Heavy     │     8 ns │    26 ns │    26 ns │    25 ns │    11 ns │
+  │ Write-Heavy    │    24 ns │    35 ns │    28 ns │    30 ns │    25 ns │
+  │ Update-Heavy   │    11 ns │    28 ns │    26 ns │    37 ns │    23 ns │
+  │ Zipfian        │    11 ns │    36 ns │    32 ns │    34 ns │    11 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    44 ns │    32 ns │    23 ns │    30 ns │    33 ns │
-  │ Seq. Insert    │    40 ns │    32 ns │    23 ns │    28 ns │    33 ns │
-  │ Reserved Ins.  │     9 ns │    32 ns │    23 ns │    27 ns │     8 ns │
-  │ Update         │     9 ns │    28 ns │    26 ns │    34 ns │    10 ns │
-  │ Rand. Lookup   │    26 ns │    15 ns │    11 ns │    13 ns │    15 ns │
-  │ High Load      │    16 ns │    16 ns │     9 ns │    11 ns │    16 ns │
-  │ Lookup Miss    │     8 ns │     9 ns │     6 ns │     8 ns │    10 ns │
-  │ Tombstone      │    10 ns │    25 ns │    17 ns │    28 ns │    11 ns │
-  │ Delete         │     9 ns │    31 ns │    27 ns │    34 ns │    11 ns │
-  │ Iteration      │     2 ns │     5 ns │     1 ns │     0 ns │     1 ns │
-  │ Churn          │    15 ns │    30 ns │    22 ns │    29 ns │    15 ns │
-  │ Mixed          │    14 ns │    46 ns │    38 ns │    40 ns │    15 ns │
+  │ Rand. Insert   │    45 ns │    29 ns │    20 ns │    35 ns │    39 ns │
+  │ Seq. Insert    │    43 ns │    29 ns │    20 ns │    35 ns │    39 ns │
+  │ Reserved Ins.  │    13 ns │    29 ns │    19 ns │    35 ns │    15 ns │
+  │ Update         │    16 ns │    31 ns │    30 ns │    41 ns │    19 ns │
+  │ Rand. Lookup   │    28 ns │    21 ns │    15 ns │    23 ns │    45 ns │
+  │ High Load      │    23 ns │    20 ns │    16 ns │    25 ns │    46 ns │
+  │ Lookup Miss    │    15 ns │    12 ns │     8 ns │    15 ns │    22 ns │
+  │ Tombstone      │    22 ns │    31 ns │    20 ns │    45 ns │    24 ns │
+  │ Delete         │    16 ns │    36 ns │    30 ns │    48 ns │    19 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
+  │ Churn          │    28 ns │    41 ns │    32 ns │    51 ns │    35 ns │
+  │ Mixed          │    28 ns │    53 ns │    54 ns │    67 ns │    33 ns │
+  │ Read-Heavy     │    20 ns │    40 ns │    39 ns │    48 ns │    25 ns │
+  │ Write-Heavy    │    67 ns │    69 ns │    52 ns │    67 ns │    58 ns │
+  │ Update-Heavy   │    28 ns │    44 ns │    41 ns │    59 ns │    28 ns │
+  │ Zipfian        │    25 ns │    53 ns │    48 ns │    61 ns │    27 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    79 ns │    41 ns │    34 ns │    52 ns │    52 ns │
-  │ Seq. Insert    │    76 ns │    42 ns │    33 ns │    52 ns │    53 ns │
-  │ Reserved Ins.  │    33 ns │    41 ns │    33 ns │    52 ns │    23 ns │
-  │ Update         │    24 ns │    39 ns │    39 ns │    50 ns │    22 ns │
-  │ Rand. Lookup   │    51 ns │    66 ns │    75 ns │    99 ns │    39 ns │
-  │ High Load      │    45 ns │    74 ns │    69 ns │    90 ns │    42 ns │
-  │ Lookup Miss    │    22 ns │    15 ns │    11 ns │    19 ns │    27 ns │
-  │ Tombstone      │    32 ns │    37 ns │    30 ns │    57 ns │    29 ns │
-  │ Delete         │    31 ns │    45 ns │    38 ns │    58 ns │    23 ns │
+  │ Rand. Insert   │    85 ns │    39 ns │    32 ns │    54 ns │    56 ns │
+  │ Seq. Insert    │    78 ns │    44 ns │    32 ns │    53 ns │    52 ns │
+  │ Reserved Ins.  │    33 ns │    45 ns │    34 ns │    53 ns │    22 ns │
+  │ Update         │    25 ns │    40 ns │    40 ns │    51 ns │    23 ns │
+  │ Rand. Lookup   │    56 ns │    87 ns │    89 ns │   107 ns │    46 ns │
+  │ High Load      │    57 ns │    87 ns │    99 ns │   112 ns │    45 ns │
+  │ Lookup Miss    │    20 ns │    15 ns │    12 ns │    19 ns │    28 ns │
+  │ Tombstone      │    36 ns │    39 ns │    30 ns │    59 ns │    30 ns │
+  │ Delete         │    28 ns │    47 ns │    39 ns │    58 ns │    22 ns │
   │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │    63 ns │    63 ns │   121 ns │    83 ns │    64 ns │
-  │ Mixed          │    67 ns │    85 ns │    90 ns │   109 ns │    80 ns │
+  │ Churn          │    77 ns │    71 ns │    78 ns │    90 ns │    77 ns │
+  │ Mixed          │    69 ns │    99 ns │   101 ns │   127 ns │    67 ns │
+  │ Read-Heavy     │    54 ns │    85 ns │    85 ns │   110 ns │    53 ns │
+  │ Write-Heavy    │   216 ns │   210 ns │   165 ns │   180 ns │   167 ns │
+  │ Update-Heavy   │    64 ns │    90 ns │    89 ns │   121 ns │    58 ns │
+  │ Zipfian        │    54 ns │    82 ns │    83 ns │   107 ns │    49 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ════════════════════════════════════════════════════════════════════════════════
   string key → 4B value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    20 ns │    33 ns │    22 ns │    34 ns │    33 ns │
-  │ Seq. Insert    │    12 ns │    21 ns │    16 ns │    27 ns │    19 ns │
-  │ Reserved Ins.  │    11 ns │    22 ns │    15 ns │    27 ns │     9 ns │
-  │ Update         │    11 ns │    29 ns │    28 ns │    25 ns │    10 ns │
-  │ Rand. Lookup   │    13 ns │    10 ns │     7 ns │    10 ns │     9 ns │
-  │ High Load      │     9 ns │     8 ns │     7 ns │     9 ns │     8 ns │
-  │ Lookup Miss    │    10 ns │     9 ns │     8 ns │    10 ns │    11 ns │
-  │ Tombstone      │    11 ns │    23 ns │    18 ns │    25 ns │    12 ns │
-  │ Delete         │    10 ns │    27 ns │    24 ns │    29 ns │    10 ns │
-  │ Iteration      │     4 ns │     4 ns │     4 ns │     2 ns │     3 ns │
-  │ Churn          │    14 ns │    22 ns │    20 ns │    22 ns │    15 ns │
-  │ Mixed          │    13 ns │    45 ns │    44 ns │    43 ns │    14 ns │
+  │ Rand. Insert   │    23 ns │    27 ns │    19 ns │    20 ns │    25 ns │
+  │ Seq. Insert    │    20 ns │    25 ns │    18 ns │    19 ns │    21 ns │
+  │ Reserved Ins.  │    11 ns │    25 ns │    18 ns │    18 ns │     9 ns │
+  │ Update         │     9 ns │    30 ns │    29 ns │    26 ns │    10 ns │
+  │ Rand. Lookup   │    11 ns │    13 ns │     7 ns │    10 ns │    16 ns │
+  │ High Load      │     8 ns │    11 ns │     7 ns │    10 ns │    14 ns │
+  │ Lookup Miss    │     7 ns │     9 ns │     5 ns │     8 ns │    13 ns │
+  │ Tombstone      │    11 ns │    30 ns │    19 ns │    24 ns │    15 ns │
+  │ Delete         │    10 ns │    35 ns │    27 ns │    33 ns │    10 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    16 ns │    38 ns │    28 ns │    29 ns │    22 ns │
+  │ Mixed          │    10 ns │    40 ns │    37 ns │    38 ns │    13 ns │
+  │ Read-Heavy     │     9 ns │    29 ns │    28 ns │    28 ns │    11 ns │
+  │ Write-Heavy    │    23 ns │    38 ns │    30 ns │    28 ns │    25 ns │
+  │ Update-Heavy   │    11 ns │    33 ns │    32 ns │    34 ns │    23 ns │
+  │ Zipfian        │    10 ns │    39 ns │    35 ns │    36 ns │    12 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    32 ns │    35 ns │    26 ns │    24 ns │    40 ns │
-  │ Seq. Insert    │    30 ns │    34 ns │    26 ns │    23 ns │    35 ns │
-  │ Reserved Ins.  │    10 ns │    36 ns │    27 ns │    22 ns │     8 ns │
-  │ Update         │    10 ns │    32 ns │    31 ns │    28 ns │    11 ns │
-  │ Rand. Lookup   │    23 ns │    16 ns │    14 ns │    31 ns │    14 ns │
-  │ High Load      │    26 ns │    23 ns │    20 ns │    25 ns │    23 ns │
-  │ Lookup Miss    │    13 ns │    10 ns │     5 ns │     8 ns │    11 ns │
-  │ Tombstone      │    12 ns │    26 ns │    19 ns │    26 ns │    12 ns │
-  │ Delete         │    10 ns │    34 ns │    29 ns │    67 ns │    13 ns │
-  │ Iteration      │     3 ns │     5 ns │     1 ns │     0 ns │     3 ns │
-  │ Churn          │    16 ns │    32 ns │    24 ns │    26 ns │    17 ns │
-  │ Mixed          │    16 ns │    40 ns │    38 ns │    41 ns │    17 ns │
+  │ Rand. Insert   │    43 ns │    30 ns │    29 ns │    33 ns │    40 ns │
+  │ Seq. Insert    │    41 ns │    28 ns │    27 ns │    32 ns │    39 ns │
+  │ Reserved Ins.  │    15 ns │    29 ns │    28 ns │    34 ns │    15 ns │
+  │ Update         │    18 ns │    35 ns │    36 ns │    37 ns │    20 ns │
+  │ Rand. Lookup   │    29 ns │    21 ns │    15 ns │    29 ns │    47 ns │
+  │ High Load      │    25 ns │    20 ns │    15 ns │    23 ns │    42 ns │
+  │ Lookup Miss    │    16 ns │    13 ns │     8 ns │    14 ns │    23 ns │
+  │ Tombstone      │    21 ns │    33 ns │    25 ns │    46 ns │    25 ns │
+  │ Delete         │    16 ns │    41 ns │    32 ns │    54 ns │    19 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
+  │ Churn          │    30 ns │    43 ns │    32 ns │    45 ns │    36 ns │
+  │ Mixed          │    28 ns │    52 ns │    50 ns │    59 ns │    33 ns │
+  │ Read-Heavy     │    20 ns │    41 ns │    39 ns │    49 ns │    24 ns │
+  │ Write-Heavy    │    74 ns │    64 ns │    53 ns │    63 ns │    54 ns │
+  │ Update-Heavy   │    24 ns │    44 ns │    46 ns │    49 ns │    27 ns │
+  │ Zipfian        │    24 ns │    48 ns │    47 ns │    57 ns │    25 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    84 ns │    50 ns │    37 ns │    48 ns │    58 ns │
-  │ Seq. Insert    │    87 ns │    48 ns │    34 ns │    49 ns │    57 ns │
-  │ Reserved Ins.  │    36 ns │    49 ns │    38 ns │    48 ns │    23 ns │
-  │ Update         │    28 ns │    43 ns │    41 ns │    45 ns │    24 ns │
-  │ Rand. Lookup   │    56 ns │    79 ns │    81 ns │    97 ns │    45 ns │
-  │ High Load      │    55 ns │    81 ns │    73 ns │    96 ns │    46 ns │
-  │ Lookup Miss    │    24 ns │    15 ns │    11 ns │    18 ns │    28 ns │
-  │ Tombstone      │    37 ns │    38 ns │    32 ns │    54 ns │    30 ns │
-  │ Delete         │    27 ns │    45 ns │    41 ns │    58 ns │    22 ns │
+  │ Rand. Insert   │    85 ns │    54 ns │    37 ns │    50 ns │    58 ns │
+  │ Seq. Insert    │    84 ns │    49 ns │    35 ns │    49 ns │    57 ns │
+  │ Reserved Ins.  │    42 ns │    54 ns │    37 ns │    50 ns │    23 ns │
+  │ Update         │    30 ns │    43 ns │    43 ns │    45 ns │    25 ns │
+  │ Rand. Lookup   │    62 ns │   114 ns │   108 ns │   125 ns │    54 ns │
+  │ High Load      │    63 ns │    98 ns │   103 ns │   122 ns │    52 ns │
+  │ Lookup Miss    │    24 ns │    15 ns │    12 ns │    19 ns │    28 ns │
+  │ Tombstone      │    36 ns │    40 ns │    30 ns │    57 ns │    31 ns │
+  │ Delete         │    26 ns │    46 ns │    42 ns │    59 ns │    23 ns │
   │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │    71 ns │    90 ns │   112 ns │    77 ns │    62 ns │
-  │ Mixed          │    98 ns │   138 ns │   148 ns │   140 ns │    61 ns │
+  │ Churn          │    86 ns │    77 ns │    86 ns │    93 ns │    79 ns │
+  │ Mixed          │    77 ns │   156 ns │   126 ns │   143 ns │    68 ns │
+  │ Read-Heavy     │    63 ns │   100 ns │    88 ns │   122 ns │    55 ns │
+  │ Write-Heavy    │   238 ns │   309 ns │   199 ns │   164 ns │   187 ns │
+  │ Update-Heavy   │    77 ns │   108 ns │    97 ns │   126 ns │    63 ns │
+  │ Zipfian        │    67 ns │    92 ns │    86 ns │   113 ns │    49 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ════════════════════════════════════════════════════════════════════════════════
   string key → 64B value
 ════════════════════════════════════════════════════════════════════════════════
 
-  10 elements:
+  100 elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    58 ns │    69 ns │    44 ns │    60 ns │    49 ns │
-  │ Seq. Insert    │    31 ns │    40 ns │   195 ns │    51 ns │    38 ns │
-  │ Reserved Ins.  │    18 ns │    35 ns │    23 ns │    49 ns │    14 ns │
-  │ Update         │    24 ns │    43 ns │    45 ns │    42 ns │    22 ns │
-  │ Rand. Lookup   │    39 ns │    18 ns │    16 ns │    17 ns │    14 ns │
-  │ High Load      │    15 ns │    14 ns │    10 ns │    15 ns │    13 ns │
-  │ Lookup Miss    │    24 ns │    14 ns │    15 ns │    15 ns │    16 ns │
-  │ Tombstone      │    19 ns │    31 ns │    24 ns │    37 ns │    19 ns │
-  │ Delete         │    16 ns │    37 ns │    32 ns │    42 ns │    15 ns │
-  │ Iteration      │     4 ns │     6 ns │     6 ns │     2 ns │     4 ns │
-  │ Churn          │    20 ns │    30 ns │    28 ns │    33 ns │    22 ns │
-  │ Mixed          │    19 ns │    63 ns │    57 ns │    63 ns │    21 ns │
+  │ Rand. Insert   │    33 ns │    31 ns │    22 ns │    24 ns │    27 ns │
+  │ Seq. Insert    │    25 ns │    30 ns │    25 ns │    25 ns │    25 ns │
+  │ Reserved Ins.  │    11 ns │    27 ns │    20 ns │    21 ns │     9 ns │
+  │ Update         │    14 ns │    33 ns │    31 ns │    28 ns │    12 ns │
+  │ Rand. Lookup   │    13 ns │    17 ns │     8 ns │    10 ns │    16 ns │
+  │ High Load      │     9 ns │    11 ns │     7 ns │    10 ns │    14 ns │
+  │ Lookup Miss    │     7 ns │    11 ns │     5 ns │     7 ns │    13 ns │
+  │ Tombstone      │    13 ns │    32 ns │    19 ns │    25 ns │    16 ns │
+  │ Delete         │    10 ns │    36 ns │    27 ns │    32 ns │    10 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     1 ns │
+  │ Churn          │    16 ns │    38 ns │    29 ns │    30 ns │    23 ns │
+  │ Mixed          │    11 ns │    41 ns │    38 ns │    37 ns │    12 ns │
+  │ Read-Heavy     │     9 ns │    29 ns │    28 ns │    28 ns │    11 ns │
+  │ Write-Heavy    │    25 ns │    43 ns │    33 ns │    31 ns │    27 ns │
+  │ Update-Heavy   │    14 ns │    35 ns │    33 ns │    36 ns │    27 ns │
+  │ Zipfian        │    11 ns │    40 ns │    36 ns │    41 ns │    11 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
-  1K elements:
+  3K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │    58 ns │    41 ns │    31 ns │    26 ns │    42 ns │
-  │ Seq. Insert    │    42 ns │    51 ns │    37 ns │    32 ns │    51 ns │
-  │ Reserved Ins.  │    14 ns │    40 ns │    34 ns │    28 ns │    10 ns │
-  │ Update         │    17 ns │    38 ns │    33 ns │    30 ns │    17 ns │
-  │ Rand. Lookup   │    29 ns │    20 ns │    11 ns │    18 ns │    20 ns │
-  │ High Load      │    21 ns │    20 ns │    11 ns │    15 ns │    18 ns │
-  │ Lookup Miss    │     9 ns │    10 ns │     5 ns │     7 ns │    10 ns │
-  │ Tombstone      │    13 ns │    28 ns │    23 ns │    28 ns │    15 ns │
-  │ Delete         │    15 ns │    35 ns │    30 ns │    38 ns │    13 ns │
-  │ Iteration      │     2 ns │     5 ns │     1 ns │     0 ns │     1 ns │
-  │ Churn          │    20 ns │    34 ns │    26 ns │    30 ns │    18 ns │
-  │ Mixed          │    18 ns │    50 ns │    45 ns │    45 ns │    18 ns │
+  │ Rand. Insert   │    52 ns │    35 ns │    32 ns │    39 ns │    45 ns │
+  │ Seq. Insert    │    50 ns │    38 ns │    34 ns │    41 ns │    48 ns │
+  │ Reserved Ins.  │    19 ns │    34 ns │    28 ns │    38 ns │    18 ns │
+  │ Update         │    24 ns │    41 ns │    38 ns │    41 ns │    24 ns │
+  │ Rand. Lookup   │    49 ns │    23 ns │    16 ns │    24 ns │    46 ns │
+  │ High Load      │    27 ns │    22 ns │    15 ns │    24 ns │    44 ns │
+  │ Lookup Miss    │    16 ns │    14 ns │     8 ns │    14 ns │    25 ns │
+  │ Tombstone      │    23 ns │    36 ns │    26 ns │    47 ns │    28 ns │
+  │ Delete         │    17 ns │    43 ns │    35 ns │    50 ns │    20 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
+  │ Churn          │    33 ns │    47 ns │    34 ns │    54 ns │    41 ns │
+  │ Mixed          │    30 ns │    78 ns │    63 ns │    67 ns │    41 ns │
+  │ Read-Heavy     │    23 ns │    48 ns │    52 ns │    53 ns │    26 ns │
+  │ Write-Heavy    │    80 ns │    75 ns │    63 ns │    74 ns │    65 ns │
+  │ Update-Heavy   │    29 ns │    53 ns │    49 ns │    57 ns │    30 ns │
+  │ Zipfian        │    25 ns │    58 ns │    50 ns │    60 ns │    26 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
   100K elements:
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
   ├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-  │ Rand. Insert   │   166 ns │    95 ns │    75 ns │    70 ns │   123 ns │
-  │ Seq. Insert    │   264 ns │    91 ns │   124 ns │    65 ns │   129 ns │
-  │ Reserved Ins.  │    47 ns │   110 ns │    93 ns │    59 ns │    31 ns │
-  │ Update         │    68 ns │    70 ns │    81 ns │    49 ns │    56 ns │
-  │ Rand. Lookup   │    87 ns │   193 ns │   223 ns │   200 ns │    64 ns │
-  │ High Load      │    77 ns │   162 ns │   156 ns │   184 ns │    66 ns │
-  │ Lookup Miss    │    27 ns │    22 ns │    16 ns │    20 ns │    29 ns │
-  │ Tombstone      │    58 ns │    64 ns │    66 ns │    58 ns │    45 ns │
-  │ Delete         │    36 ns │    73 ns │    75 ns │    61 ns │    23 ns │
-  │ Iteration      │     2 ns │     1 ns │     1 ns │     0 ns │     2 ns │
-  │ Churn          │   106 ns │   105 ns │   109 ns │   110 ns │   100 ns │
-  │ Mixed          │    93 ns │   163 ns │   153 ns │   183 ns │    87 ns │
+  │ Rand. Insert   │   143 ns │    83 ns │    88 ns │    61 ns │   103 ns │
+  │ Seq. Insert    │   171 ns │   100 ns │    96 ns │    64 ns │   104 ns │
+  │ Reserved Ins.  │    63 ns │   101 ns │   103 ns │    69 ns │    34 ns │
+  │ Update         │    69 ns │   159 ns │    86 ns │    48 ns │    65 ns │
+  │ Rand. Lookup   │    94 ns │   186 ns │   187 ns │   226 ns │    73 ns │
+  │ High Load      │    92 ns │   180 ns │   187 ns │   215 ns │    70 ns │
+  │ Lookup Miss    │    33 ns │    19 ns │    13 ns │    19 ns │    28 ns │
+  │ Tombstone      │    57 ns │    70 ns │    68 ns │    58 ns │    44 ns │
+  │ Delete         │    37 ns │    75 ns │    81 ns │    60 ns │    24 ns │
+  │ Iteration      │     2 ns │     2 ns │     1 ns │     0 ns │     2 ns │
+  │ Churn          │   104 ns │   143 ns │   125 ns │   134 ns │   114 ns │
+  │ Mixed          │   103 ns │   167 ns │   169 ns │   237 ns │    94 ns │
+  │ Read-Heavy     │    92 ns │   246 ns │   181 ns │   226 ns │    76 ns │
+  │ Write-Heavy    │   321 ns │   272 ns │   213 ns │   207 ns │   230 ns │
+  │ Update-Heavy   │   131 ns │   223 ns │   174 ns │   205 ns │   133 ns │
+  │ Zipfian        │    82 ns │   125 ns │   112 ns │   159 ns │    70 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 ╔══════════════════════════════════════════════════════════════════════════════╗

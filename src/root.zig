@@ -12,7 +12,8 @@
 //! - **SIMD-accelerated iteration**: Vectorized metadata scanning
 //!
 //! ## Algorithm
-//! Open-addressing with quadratic probing and linked chains per home bucket.
+//! Open-addressing with linear probing and linked chains per home bucket.
+//! Linear probing provides excellent cache locality while chains enable tombstone-free deletion.
 //! Each bucket has 16-bit metadata: 4-bit hash fragment | 1-bit home flag | 11-bit displacement.
 
 const std = @import("std");
@@ -209,11 +210,10 @@ inline fn hashFrag(hash: u64) MetaType {
     return @as(MetaType, @truncate(hash >> (64 - HASH_FRAG_SIZE_BITS))) << (16 - HASH_FRAG_SIZE_BITS);
 }
 
-/// Standard quadratic probing formula.
-/// Guarantees all buckets are visited when bucket count is a power of two.
-inline fn quadratic(displacement: MetaType) usize {
-    const d: usize = displacement;
-    return (d * d + d) / 2;
+/// Linear probing - displacement IS the offset.
+/// Better cache locality than quadratic, and with chain-based design we avoid clustering issues.
+inline fn probeOffset(displacement: MetaType) usize {
+    return displacement;
 }
 
 /// Find the first non-zero u16 in a group of 4 (64 bits).
@@ -354,7 +354,7 @@ pub fn TheHashTableWithFns(
 
         // Fields
         key_count: usize,
-        buckets_mask: usize, // bucket_count - 1, or 0 if empty
+        buckets_mask: usize, // bucket_count - 1 (for fast masking), or 0 if empty
         buckets: [*]Bucket,
         metadata: [*]MetaType,
         allocator: Allocator,
@@ -398,7 +398,6 @@ pub fn TheHashTableWithFns(
 
         /// Returns the current bucket count.
         pub fn bucketCount(self: *const Self) usize {
-            // buckets_mask is 0 when empty, otherwise bucket_count - 1
             return if (self.buckets_mask == 0) 0 else self.buckets_mask + 1;
         }
 
@@ -630,6 +629,9 @@ pub fn TheHashTableWithFns(
         }
 
         inline fn insertRaw(self: *Self, key: K, value: V, unique: bool, replace: bool) ?InsertResult {
+            // Empty table - trigger allocation
+            if (self.buckets_mask == 0) return null;
+
             const hash = hashFn(key);
             const frag = hashFrag(hash);
             const home_bucket = hash & self.buckets_mask;
@@ -689,7 +691,7 @@ pub fn TheHashTableWithFns(
 
                     const displacement = self.metadata[bucket] & DISPLACEMENT_MASK;
                     if (displacement == DISPLACEMENT_MASK) break;
-                    bucket = (home_bucket + quadratic(displacement)) & self.buckets_mask;
+                    bucket = (home_bucket + probeOffset(displacement)) & self.buckets_mask;
                 }
             }
 
@@ -747,6 +749,11 @@ pub fn TheHashTableWithFns(
         };
 
         inline fn getInternal(self: *const Self, key: K) GetResult {
+            // Empty table - not found
+            if (self.buckets_mask == 0) {
+                return .{ .bucket_idx = null, .home_bucket = 0 };
+            }
+
             const hash = hashFn(key);
             const home_bucket = hash & self.buckets_mask;
 
@@ -784,7 +791,7 @@ pub fn TheHashTableWithFns(
                 }
 
                 // Compute the *next* bucket in the chain
-                const next_bucket = (home_bucket + quadratic(displacement)) & self.buckets_mask;
+                const next_bucket = (home_bucket + probeOffset(displacement)) & self.buckets_mask;
 
                 // Prefetch the next bucket (we will access it next iteration)
                 @prefetch(&self.buckets[next_bucket], .{ .rw = .read, .locality = 1 });
@@ -817,7 +824,7 @@ pub fn TheHashTableWithFns(
                 var bucket = home;
                 while (true) {
                     const displacement = self.metadata[bucket] & DISPLACEMENT_MASK;
-                    const next = (home + quadratic(displacement)) & self.buckets_mask;
+                    const next = (home + probeOffset(displacement)) & self.buckets_mask;
                     if (next == bucket_idx) {
                         self.metadata[bucket] |= DISPLACEMENT_MASK;
                         self.metadata[bucket_idx] = EMPTY;
@@ -832,7 +839,7 @@ pub fn TheHashTableWithFns(
             while (true) {
                 const displacement = self.metadata[bucket] & DISPLACEMENT_MASK;
                 const prev = bucket;
-                bucket = (home + quadratic(displacement)) & self.buckets_mask;
+                bucket = (home + probeOffset(displacement)) & self.buckets_mask;
 
                 if ((self.metadata[bucket] & DISPLACEMENT_MASK) == DISPLACEMENT_MASK) {
                     // Found last - swap it to bucket_idx
@@ -852,22 +859,19 @@ pub fn TheHashTableWithFns(
         };
 
         inline fn findFirstEmpty(self: *Self, home_bucket: usize) ?FindEmptyResult {
+            // Linear probing: check consecutive slots for cache efficiency
             var displacement: MetaType = 1;
-            var linear_displacement: usize = 1;
 
-            while (true) {
-                const empty = (home_bucket + linear_displacement) & self.buckets_mask;
+            while (displacement < DISPLACEMENT_MASK) {
+                const empty = (home_bucket +% displacement) & self.buckets_mask;
                 if (self.metadata[empty] == EMPTY) {
                     return .{ .index = empty, .displacement = displacement };
                 }
-
                 displacement += 1;
-                if (displacement == DISPLACEMENT_MASK) {
-                    @branchHint(.unlikely);
-                    return null;
-                }
-                linear_displacement += displacement;
             }
+
+            // Displacement limit reached - extremely rare, triggers rehash
+            return null;
         }
 
         inline fn findInsertLocationInChain(self: *Self, home_bucket: usize, displacement_to_empty: MetaType) usize {
@@ -877,7 +881,7 @@ pub fn TheHashTableWithFns(
                 if (displacement > displacement_to_empty) {
                     return candidate;
                 }
-                candidate = (home_bucket + quadratic(displacement)) & self.buckets_mask;
+                candidate = (home_bucket + probeOffset(displacement)) & self.buckets_mask;
             }
         }
 
@@ -889,7 +893,7 @@ pub fn TheHashTableWithFns(
             var prev = home_bucket;
             while (true) {
                 const displacement = self.metadata[prev] & DISPLACEMENT_MASK;
-                const next = (home_bucket + quadratic(displacement)) & self.buckets_mask;
+                const next = (home_bucket + probeOffset(displacement)) & self.buckets_mask;
                 if (next == bucket) break;
                 prev = next;
             }
@@ -957,9 +961,9 @@ pub fn TheHashTableWithFns(
                 }
 
                 if (!success) {
-                    // Displacement limit hit - try larger size
+                    // Displacement limit hit - double and retry
                     self.allocator.free(new_mem);
-                    new_count *= 2;
+                    new_count = new_count * 2;
                     continue;
                 }
 
