@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/ThobiasKnudsen/TheZigHashTable/actions/workflows/ci.yml/badge.svg)](https://github.com/ThobiasKnudsen/TheZigHashTable/actions)
 
-string keys — Average across all value types and sizes (9 configurations) for all mixed workloads:
+string keys — Average across all value sizes and table sizes (9 configurations) for all mixed workloads:
 ```
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
@@ -19,7 +19,7 @@ string keys — Average across all value types and sizes (9 configurations) for 
   │ Zipfian        │    33 ns │    63 ns │    60 ns │    72 ns │    29 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘ 
 ```
-u64 keys — Average across all value types and sizes (9 configurations) for all mixed workloads:
+u64 keys — Average across all value sizes and table sizes (9 configurations) for all mixed workloads:
 ```
   ┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
   │ Operation      │ This     │ Abseil   │ Boost    │ Ankerl   │ std      │
