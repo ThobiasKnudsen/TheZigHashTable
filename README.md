@@ -32,7 +32,7 @@ u64 keys — Average across all value types and sizes (9 configurations) for all
   │ Zipfian        │     9 ns │    12 ns │     9 ns │    16 ns │    11 ns │
   └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘ 
 ```
-n `zig build benchmark` to reproduce the benchmarks. See [BENCHMARKS.md](BENCHMARKS.md) if you dont want to run the benchmarks locally
+run `zig build benchmark` to reproduce the benchmarks. See [BENCHMARKS.md](BENCHMARKS.md) if you dont want to run the benchmarks locally
 
 ## Why TheHashTable?
 
